@@ -10,16 +10,35 @@
 </head>
 <body>
   <div id="app"></div>
-<!-- before render.js -->
-<script src="js/adapters.js"></script>
-<script src="js/drag.js"></script>
+
+  <!-- 1. pure constants, no dependencies -->
   <script src="js/constants.js"></script>
+
+  <!-- 2. tiny helper, no dependencies -->
   <script src="js/utils.js"></script>
+
+  <!-- 3. needs SAFE_ID_RE, ROLE_KEYS, STATUS_KEYS from constants -->
   <script src="js/data.js"></script>
+
+  <!-- 4. needs makeSampleData from data.js — render() called later so safe -->
   <script src="js/state.js"></script>
+
+  <!-- 5. pure function, no dependencies -->
   <script src="js/layout.js"></script>
+
+  <!-- 6. needs SAFE_ID_RE, ROLE_KEYS, STATUS_KEYS -->
+  <script src="js/adapters.js"></script>
+
+  <!-- 7. needs state, layoutNodes — getPositionsForRun + makeEdgePath used by render -->
+  <script src="js/drag.js"></script>
+
+  <!-- 8. needs everything above — does NOT call render() itself -->
   <script src="js/render.js"></script>
+
+  <!-- 9. needs showModal, state, validateRunSchema, importFromThirdParty -->
   <script src="js/events.js"></script>
+
+  <!-- 10. boot — everything above is loaded, now safe to call render() -->
   <script src="js/main.js"></script>
 </body>
 </html>
