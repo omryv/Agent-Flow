@@ -1,171 +1,75 @@
 # AgentFlow
 
 **Counterfactual trace engine for LLM agent executions.**
-Visualise, inspect, and replay agent runs as interactive DAGs. Import traces from LangSmith, LangFuse, or W&B Weave. Ask *"what if this node had failed?"* and see the answer change.
 
-Zero build step. Zero dependencies. One `index.html`, ten JS modules, one CSS file.
+AgentFlow lets you visualize, inspect, and replay agent runs as interactive directed acyclic graphs. Import traces from LangSmith, LangFuse, or Weights & Biases Weave, then ask "what if this node had failed?" and watch the downstream answer change in real time.
+
+Zero build step. Zero dependencies. One HTML file, ten JavaScript modules, one stylesheet. Ship it with a static file server and nothing else.
 
 ---
 
-## What it does
+## The Problem
 
-- **Graph view** — every agent step rendered as a coloured node (Input, Retrieve, Plan, Tool, Synthesize, Validate, Output) connected by DAG edges
-- **Drag-to-reposition** — auto-layout on first render, then drag any node; positions persist in state
-- **Counterfactual scenarios** — override any node's status + content, see how metrics and the final answer change
-- **Third-party import** — drop in raw JSON from LangSmith / LangFuse / W&B Weave; auto-detects format and converts
-- **Native format** — export and re-import `.agentflow.json` runs
-- **Metrics bar** — total time, tokens, node counts, success/fail breakdown with counterfactual deltas
-- **Inspector panel** — click a node to see full content, original-vs-counterfactual diff, edit, or delete
+Modern LLM agent frameworks produce complex, multi-step execution traces - retrieval calls, tool invocations, planning loops, synthesis passes - but the tooling to understand those traces is either locked inside proprietary dashboards or requires heavyweight local infrastructure. Worse, none of them answer the question that actually matters during debugging: *what would have happened differently?*
+
+AgentFlow exists to close that gap.
+
+---
+
+## What It Does
+
+**Graph visualization.** Every agent step renders as a color-coded node - Input, Retrieve, Plan, Tool, Synthesize, Validate, Output connected by dependency edges and laid out automatically via Kahn's topological sort. Drag any node to reposition; the layout persists across sessions.
+
+**Counterfactual reasoning.** Override any node's status or content and immediately see how metrics, downstream nodes, and the final answer change. This turns post-hoc trace inspection into an interactive debugging surface.
+
+**Universal import.** Drop in raw JSON from LangSmith, LangFuse, or W&B Weave. The adapter layer auto-detects the format, infers node roles from operation names, extracts token usage from format-specific locations, and produces a validated native run. Export and re-import in AgentFlow's own `.agentflow.json` format.
+
+**Metrics at a glance.** Total latency, token consumption, node counts, and success/failure breakdowns — all updated live with counterfactual deltas so you can quantify the impact of each hypothetical change.
 
 ---
 
 ## Architecture
 
-```
-AgentFlow/
-├── index.html           ← script + style tags, nothing else
-├── css/
-│   └── styles.css       ← all visual styling
-├── js/
-│   ├── constants.js     ← ROLES, STATUSES, ICONS, SAFE_ID_RE
-│   ├── utils.js         ← esc() for HTML escaping
-│   ├── data.js          ← makeSampleData(), validateRunSchema()
-│   ├── state.js         ← state, setState(), getActiveRunView()
-│   ├── layout.js        ← Kahn's-algorithm DAG layout
-│   ├── adapters.js      ← LangSmith / LangFuse / Weave → native
-│   ├── drag.js          ← drag, getPositionsForRun(), makeEdgePath()
-│   ├── render.js        ← all build*() HTML-string functions
-│   ├── events.js        ← handlers, modal system, dialogs
-│   └── main.js          ← boot + window.* exports for inline onclicks
-├── .gitignore
-├── vercel.json          ← security headers, cache rules, SPA rewrite
-└── README.md
-```
+The entire application is a pure static site. No framework, no bundler, no package manager. Ten JavaScript files loaded in dependency order via script tags, each owning a single concern: constants, utilities, data validation, state management, DAG layout, third-party adapters, drag mechanics, DOM rendering, event handling, and boot.
 
-### Load order matters
+State flows in one direction. A user action triggers a handler, which calls `setState`, which triggers a full DOM rebuild from HTML-string builder functions. No virtual DOM, no diffing acceptable because agent graphs are small (under 500 nodes) and renders complete in under five milliseconds.
 
-Script tags in `index.html` are ordered by dependency. `constants` has none, `utils` none, `data` needs `constants`, `state` needs `data`, `render` needs everything above it, `main` is the boot trigger.
-
-### State flow
-
-```
-user action → handler in events.js
-           → setState({...})          (state.js)
-           → render()                  (render.js)
-           → buildHTML() string       → #app innerHTML
-           → attachEvents()            (events.js)
-```
-
-One top-level render. No diffing. Every state change rebuilds the DOM. Acceptable because the graph is small (<500 nodes) and renders in <5ms.
-
-### Why drag is special
-
-Dragging does **not** go through `setState` during the motion — that would trigger a full re-render per mousemove. Instead `drag.js` mutates node wrapper `style.left`/`top` and SVG path `d` attributes directly for 60fps feel. Only on `mouseup` does it commit the final position to state and trigger one render.
+Drag is the sole exception. During mouse movement, the drag module mutates DOM positions and SVG edge paths directly for 60fps responsiveness. Only on mouse-up does it commit the final position to state and trigger a single re-render.
 
 ---
 
-## Development journey
+## Technical Decisions and Why They Matter
 
-This repo started as a single 1000-line `index.html` with inline `<style>` and `<script>`. Here's how it became production-ready.
+**Global functions over ES modules.** This keeps the deploy story at "push static files." No transpilation, no tree-shaking, no source maps to debug. When something breaks, the stack trace points to exactly one file, and fixing it requires no rebuild.
 
-### Phase 1 — File split
+**Format detection over explicit configuration.** The adapter layer identifies LangSmith by the presence of `run_type`, LangFuse by `observations[]`, and Weave by `op_name`. Users drop in a file and it works. No format selection dialogs, no version flags.
 
-Extracted `<style>` into `css/styles.css` and the monolithic `<script>` into ten topic-based JS modules. Kept the global-function architecture (no ES modules, no bundler) so the site remains a pure static deploy with zero tooling.
-
-### Phase 2 — Third-party adapters
-
-Added `adapters.js` with format detection and three converters:
-
-| Source | Detection signal | Shape |
-|---|---|---|
-| LangSmith | `run_type` field | Recursive `child_runs` tree |
-| LangFuse | `observations[]` array | Flat list with `parentObservationId` |
-| W&B Weave | `op_name` field | Nested `children` or flat with `parent_id` |
-
-Each adapter infers the `role` field from the operation name (`llm` → synthesize, `retriever` → retrieve, etc.), extracts token usage from the format-specific location, and produces a validated `.agentflow.json` run.
-
-### Phase 3 — Drag and drop
-
-Added `drag.js`. Key design decision: the active run view calls `getPositionsForRun()` instead of `layoutNodes()` directly — stored drag positions override the auto-layout. A Reset Layout button wipes the overrides for the active run, falling back to auto-layout.
-
-Live DOM updates during drag (no re-render); single `setState` commit on mouseup. Uses `data-node-id` / `data-edge-id` attributes so the live updater can find elements without querying state.
-
-### Phase 4 — Deployment
-
-Added `vercel.json` with:
-- Strict security headers (CSP, X-Frame-Options, Permissions-Policy)
-- Long-cache for `/js/*.js` and `/css/*.css` (immutable)
-- No-cache for `index.html` (ensures fresh script tags after deploy)
-- SPA rewrite rule that excludes static asset paths
-
-### Phase 5 — Debug loop
-
-Deploying exposed bugs that only showed as a black screen. Added a temporary `window.onerror` handler to paint errors directly on the page, since Vercel Codespace workflows make F12 inconvenient. One by one, fixed:
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `ReferenceError: initDrag` | `drag.js` not committed | Added file |
-| `state.runs` undefined | `makeSampleData()` missing `return` | Completed function |
-| `ReferenceError: esc` | `utils.js` not committed | Added file |
-| `layoutNodes` not a function | `layout.js` was a stub (74 B) | Filled in Kahn's BFS |
-
-Each error proved the value of the global-function architecture: the stack trace pointed to exactly one file, and fixing it required no rebuild or reinstall.
-
-### Phase 6 — Cleanup
-
-Removed the debug `window.onerror` block. Final `index.html` is 15 lines.
+**DOM destruction over diffing.** For a tool where the graph rarely exceeds a few hundred nodes, the complexity cost of a diffing algorithm is not justified. Full rebuilds are fast, predictable, and trivially debuggable.
 
 ---
 
-## Running locally
+## Deployment
 
-```bash
-# any static server works
-python3 -m http.server 8000
-# or
-npx serve .
-```
+Push to GitHub. Point Vercel at the repo with framework preset set to "Other" and every build field left blank. The included `vercel.json` handles security headers, immutable caching for JS and CSS assets, no-cache for the HTML entry point, and SPA rewrites that exclude static paths.
 
-No `npm install`. No build.
+Running locally is equally simple: `python3 -m http.server 8000` or `npx serve .`  no install step.
 
 ---
 
-## Deploying
+## MVP Roadmap: Next — LangChain Native Integration
 
-Push to GitHub, then on **vercel.com/new**:
+The next milestone transforms AgentFlow from a trace viewer into a first-class debugging layer for LangChain applications.
 
-| Setting | Value |
-|---|---|
-| Framework Preset | **Other** |
-| Root Directory | `./` |
-| Build / Install / Output | *(all blank)* |
+**Phase 1 - LangChain callback handler.** A lightweight Python callback handler that emits `.agentflow.json` traces directly from any LangChain `chain.invoke()` or `agent.run()` call. No intermediate export to LangSmith required. Install with pip, attach the handler, and traces stream to disk or to a local AgentFlow instance over a WebSocket.
 
-`vercel.json` handles the rest.
+**Phase 2 - Live streaming.** Real-time trace rendering as the agent executes. Nodes appear and transition through states  pending, running, succeeded, failed - as the LangChain callback fires events. Counterfactual mode remains available on completed nodes while the run is still in progress.
 
----
+**Phase 3 - Breakpoint debugging.** Pause a live LangChain agent run at any node, inspect intermediate state, optionally edit the node's output, and resume execution with the modified value. This turns AgentFlow into an interactive debugger, not just a visualizer.
 
-## Importing traces
+**Phase 4 - Comparative analysis.** Side-by-side rendering of two or more runs of the same chain with structural diff highlighting. Identify which node diverged, why latency changed, or where token usage spiked between prompt iterations.
 
-| Source | How to export |
-|---|---|
-| **LangSmith** | Run detail → ⋯ menu → *Download as JSON* |
-| **LangFuse** | Trace detail → *Export* → JSON |
-| **W&B Weave** | `weave.Call.export()` or Weave UI download |
-| **AgentFlow native** | Export button in the toolbar |
-
-Import button accepts any of the above; the format is auto-detected.
+**Phase 5 - Collaboration and persistence.** Shareable trace URLs, annotation layers for team review, and a thin persistence backend (SQLite or Postgres) for trace history and search. The static-site philosophy remains intact for the viewer; the backend is optional infrastructure for teams that need it.
 
 ---
 
-## Keyboard shortcuts
-
-| Key | Action |
-|---|---|
-| `Esc` | Close modal |
-| `Delete` / `Backspace` | Delete selected node |
-
----
-
-## License
-
-MIT
+*Built by Omry Damari.*
