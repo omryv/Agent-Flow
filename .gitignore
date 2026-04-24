@@ -69,3 +69,4 @@ logs/
 *.tar.gz
 .temp/
 .tmp/
+.vercel
