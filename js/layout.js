@@ -1,4 +1,12 @@
+/*!
+ * AgentFlow
+ * Copyright (c) 2026 Visigence. All rights reserved.
+ * Proprietary and confidential.
+ * Unauthorized copying, modification, distribution, or use is prohibited.
+ */
 'use strict';
+
+
 
 function layoutNodes(nodes, edges) {
   const nodeW = 220, nodeH = 120, padX = 60, padY = 50;

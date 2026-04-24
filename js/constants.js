@@ -1,4 +1,12 @@
+/*!
+ * AgentFlow
+ * Copyright (c) 2026 Visigence. All rights reserved.
+ * Proprietary and confidential.
+ * Unauthorized copying, modification, distribution, or use is prohibited.
+ */
 'use strict';
+
+
 
 const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 
