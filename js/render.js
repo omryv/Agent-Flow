@@ -19,7 +19,7 @@ function buildHTML() {
   `;
 }
 
-ffunction buildHeader(view) {
+function buildHeader(view) {
   const run = view ? view.run : null;
   return `
   <div id="header">

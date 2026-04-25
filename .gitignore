@@ -166,3 +166,4 @@ bun.lockb
 .eslintcache
 .stylelintcache
 .prettiercache
+.vercel

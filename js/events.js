@@ -393,6 +393,8 @@ function _delegatedMouseDown(e) {
   const t = e.target.closest('[data-drag-handle]');
   if (!t) return;
   initDrag(e, t.dataset.dragId);
+}
+
 // ── Command palette ──────────────────────────────────────
 const CMDS = [
   { id: 'new-run',     label: 'New Run',                    keys: '⌘N',     run: () => openNewRunDialog() },
