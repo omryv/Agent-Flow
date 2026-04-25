@@ -1,4 +1,4 @@
-/*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
+/*! AgentFlow — Copyright (c) 2026 Omry Damari 'Visigence" . Proprietary. */
 'use strict';
 
 // ── Modal ────────────────────────────────────────────────
@@ -23,6 +23,35 @@ function setTab(tab)    { setState({ activeTab: tab }); }
 function setCf(id)      { setState({ activeCounterfactual: id || null, selectedNodeId: null }); }
 function toggleCf(id)   { setState({ activeCounterfactual: state.activeCounterfactual === id ? null : id, activeTab: 'graph' }); }
 
+// ── Active-context mutation (base run OR active CF) ──────
+function _mutateActiveContext(updater) {
+  return state.runs.map(r => {
+    if (r.id !== state.activeRunId) return r;
+
+    if (state.activeCounterfactual) {
+      return Object.assign({}, r, {
+        counterfactuals: (r.counterfactuals || []).map(cf => {
+          if (cf.id !== state.activeCounterfactual) return cf;
+          // Materialize snapshot from legacy override-only CFs on first edit
+          const baseNodes = Array.isArray(cf.nodes)
+            ? cf.nodes
+            : r.nodes.map(n =>
+                cf.nodeOverrides && cf.nodeOverrides[n.id]
+                  ? Object.assign({}, n, cf.nodeOverrides[n.id])
+                  : Object.assign({}, n));
+          const baseEdges = Array.isArray(cf.edges)
+            ? cf.edges
+            : r.edges.map(e => Object.assign({}, e));
+          const updated = updater({ nodes: baseNodes, edges: baseEdges });
+          return Object.assign({}, cf, updated);
+        })
+      });
+    }
+    const updated = updater({ nodes: r.nodes, edges: r.edges });
+    return Object.assign({}, r, updated);
+  });
+}
+
 // ── Destructive ──────────────────────────────────────────
 function deleteActiveRun() {
   if (!state.activeRunId) return;
@@ -37,13 +66,10 @@ function deleteActiveRun() {
 }
 
 function deleteNode(id) {
-  const runs = state.runs.map(r => {
-    if (r.id !== state.activeRunId) return r;
-    return Object.assign({}, r, {
-      nodes: r.nodes.filter(n => n.id !== id),
-      edges: r.edges.filter(e => e.from !== id && e.to !== id),
-    });
-  });
+  const runs = _mutateActiveContext(({ nodes, edges }) => ({
+    nodes: nodes.filter(n => n.id !== id),
+    edges: edges.filter(e => e.from !== id && e.to !== id),
+  }));
   const positions = Object.assign({}, state.nodePositions || {});
   if (positions[state.activeRunId]) {
     const copy = Object.assign({}, positions[state.activeRunId]);
@@ -60,12 +86,9 @@ function handleExport() {
   const blob = new Blob([JSON.stringify(run, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.rel = 'noopener';
+  a.href = url; a.rel = 'noopener';
   a.download = run.id.replace(/[^A-Za-z0-9_-]/g, '_') + '.agentflow.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
@@ -186,8 +209,10 @@ function openAddNodeDialog() {
   if (!state.activeRunId) return;
   const roles = ROLE_KEYS.map(k => `<option value="${esc(k)}">${esc(ROLES[k].label)}</option>`).join('');
   const statuses = STATUS_KEYS.map(k => `<option value="${esc(k)}">${esc(STATUSES[k].label)}</option>`).join('');
+  const ctxLabel = state.activeCounterfactual ? 'in active counterfactual' : 'in base run';
   showModal(`
     <h2>${ICONS.node} Add Node</h2>
+    <p style="font-size:11px;color:var(--text-3);margin-bottom:12px;">Will be added <strong>${ctxLabel}</strong>.</p>
     <label for="an-name">Name</label>
     <input id="an-name" maxlength="200" autocomplete="off"/>
     <label for="an-role">Role</label>
@@ -215,21 +240,24 @@ function addNode() {
   if (!STATUS_KEYS.includes(status)) { errEl.textContent = 'Invalid status.'; return; }
 
   const node = { id: 'n' + Date.now(), name, role, status, content };
-  const runs = state.runs.map(r => r.id === state.activeRunId
-    ? Object.assign({}, r, { nodes: [...r.nodes, node] })
-    : r);
+  const runs = _mutateActiveContext(({ nodes, edges }) => ({
+    nodes: [...nodes, node],
+    edges,
+  }));
   closeModal();
   setState({ runs, selectedNodeId: node.id });
 }
 
 function openEditNodeDialog(nodeId) {
-  const run = state.runs.find(r => r.id === state.activeRunId);
-  const node = run?.nodes.find(n => n.id === nodeId);
+  const view = getActiveRunView();
+  const node = view?.run.nodes.find(n => n.id === nodeId);
   if (!node) return;
   const roles = ROLE_KEYS.map(k => `<option value="${esc(k)}" ${k === node.role ? 'selected' : ''}>${esc(ROLES[k].label)}</option>`).join('');
   const statuses = STATUS_KEYS.map(k => `<option value="${esc(k)}" ${k === node.status ? 'selected' : ''}>${esc(STATUSES[k].label)}</option>`).join('');
+  const ctxLabel = state.activeCounterfactual ? 'in active counterfactual only' : 'in base run';
   showModal(`
     <h2>Edit Node</h2>
+    <p style="font-size:11px;color:var(--text-3);margin-bottom:12px;">Edits saved <strong>${ctxLabel}</strong>.</p>
     <input type="hidden" id="en-id" value="${esc(node.id)}"/>
     <label for="en-name">Name</label>
     <input id="en-name" maxlength="200" autocomplete="off" value="${esc(node.name)}"/>
@@ -258,8 +286,9 @@ function saveEditNode() {
   if (!ROLE_KEYS.includes(role)) { errEl.textContent = 'Invalid role.'; return; }
   if (!STATUS_KEYS.includes(status)) { errEl.textContent = 'Invalid status.'; return; }
 
-  const runs = state.runs.map(r => r.id !== state.activeRunId ? r : Object.assign({}, r, {
-    nodes: r.nodes.map(n => n.id === id ? Object.assign({}, n, { name, role, status, content }) : n)
+  const runs = _mutateActiveContext(({ nodes, edges }) => ({
+    nodes: nodes.map(n => n.id === id ? Object.assign({}, n, { name, role, status, content }) : n),
+    edges,
   }));
   closeModal();
   setState({ runs });
@@ -271,6 +300,9 @@ function openAddCfDialog() {
   const nodeOpts = run.nodes.map(n => `<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('');
   showModal(`
     <h2>${ICONS.cf} New Counterfactual</h2>
+    <p style="font-size:11px;color:var(--text-3);margin-bottom:12px;">
+      A snapshot of the current run will be taken. Subsequent edits to nodes while this scenario is active will only affect this scenario.
+    </p>
     <label for="cf-name">Scenario name</label>
     <input id="cf-name" maxlength="200" autocomplete="off" placeholder="e.g. What if retrieval failed"/>
     <label for="cf-desc">Description</label>
@@ -306,10 +338,19 @@ function createCf() {
   if (!run.nodes.find(n => n.id === nodeId)) { errEl.textContent = 'Invalid node.'; return; }
   if (!STATUS_KEYS.includes(status)) { errEl.textContent = 'Invalid status.'; return; }
 
+  // Full snapshot at creation — independent from base & other CFs
+  const overrideEntry = { status, content };
+  const snapshotNodes = run.nodes.map(n =>
+    n.id === nodeId ? Object.assign({}, n, overrideEntry) : Object.assign({}, n)
+  );
+  const snapshotEdges = run.edges.map(e => Object.assign({}, e));
+
   const cf = {
     id: 'cf-' + Date.now(),
     name, description,
-    nodeOverrides: { [nodeId]: { status, content } },
+    nodes: snapshotNodes,
+    edges: snapshotEdges,
+    nodeOverrides: { [nodeId]: overrideEntry }, // kept for legacy export readers
     metrics: Object.assign({}, run.metrics),
     finalAnswer: run.finalAnswer,
   };
@@ -373,4 +414,4 @@ function installDelegation() {
   document.addEventListener('keydown', _onKey);
 }
 
-function attachEvents() { /* kept for compat, render calls it */ }
+function attachEvents() {}
