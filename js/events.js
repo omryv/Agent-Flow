@@ -393,13 +393,197 @@ function _delegatedMouseDown(e) {
   const t = e.target.closest('[data-drag-handle]');
   if (!t) return;
   initDrag(e, t.dataset.dragId);
+// ── Command palette ──────────────────────────────────────
+const CMDS = [
+  { id: 'new-run',     label: 'New Run',                    keys: '⌘N',     run: () => openNewRunDialog() },
+  { id: 'import',      label: 'Import Run',                 keys: '⌘I',     run: () => openImportDialog() },
+  { id: 'export',      label: 'Export Active Run',          keys: '⌘E',     run: () => handleExport(),       when: () => !!state.activeRunId },
+  { id: 'add-node',    label: 'Add Node',                   keys: '⌘⇧N',    run: () => openAddNodeDialog(),  when: () => !!state.activeRunId && state.activeTab === 'graph' },
+  { id: 'new-cf',      label: 'New Counterfactual',         keys: '⌘⇧C',    run: () => openAddCfDialog(),    when: () => !!state.activeRunId },
+  { id: 'tab-graph',   label: 'View: Graph',                keys: 'G',      run: () => setTab('graph'),      when: () => !!state.activeRunId },
+  { id: 'tab-cf',      label: 'View: Counterfactuals',      keys: 'C',      run: () => setTab('counterfactuals'), when: () => !!state.activeRunId },
+  { id: 'reset-layout',label: 'Reset Layout',               keys: '⌘⌥R',    run: () => resetLayout(),        when: () => !!state.activeRunId && state.activeTab === 'graph' },
+  { id: 'clear-cf',    label: 'Clear Active Scenario',      keys: '⌘⌥0',    run: () => setCf(''),            when: () => !!state.activeCounterfactual },
+  { id: 'delete-run',  label: 'Delete Active Run',          keys: '⌘⌫',     run: () => deleteActiveRun(),    when: () => !!state.activeRunId, danger: true },
+  { id: 'delete-node', label: 'Delete Selected Node',       keys: 'Del',    run: () => deleteNode(state.selectedNodeId), when: () => !!state.selectedNodeId, danger: true },
+];
+
+function _availableCmds() {
+  return CMDS.filter(c => !c.when || c.when());
 }
 
+function _scoreCmd(cmd, q) {
+  if (!q) return 1;
+  const label = cmd.label.toLowerCase();
+  q = q.toLowerCase().trim();
+  if (label === q) return 1000;
+  if (label.startsWith(q)) return 500;
+  if (label.includes(q)) return 250;
+  // fuzzy: all chars in order
+  let i = 0;
+  for (const ch of label) { if (ch === q[i]) i++; if (i === q.length) return 100 - label.length; }
+  return 0;
+}
+
+let _palette = null;
+let _paletteIdx = 0;
+let _paletteResults = [];
+
+function openCmdPalette() {
+  if (_palette) return closeCmdPalette();
+  _paletteIdx = 0;
+  _paletteResults = _availableCmds();
+  _palette = document.createElement('div');
+  _palette.className = 'cmdk-backdrop';
+  _palette.innerHTML = `
+    <div class="cmdk" role="dialog" aria-label="Command palette">
+      <div class="cmdk-search">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M9.2 9.2L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input id="cmdk-input" placeholder="Type a command…" autocomplete="off" spellcheck="false"/>
+        <kbd class="cmdk-hint">esc</kbd>
+      </div>
+      <div class="cmdk-list" id="cmdk-list" role="listbox"></div>
+      <div class="cmdk-foot">
+        <span><kbd>↑↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> run</span>
+        <span><kbd>esc</kbd> close</span>
+      </div>
+    </div>`;
+  document.body.appendChild(_palette);
+  _palette.addEventListener('mousedown', e => { if (e.target === _palette) closeCmdPalette(); });
+  const input = document.getElementById('cmdk-input');
+  input.addEventListener('input', _onCmdInput);
+  input.addEventListener('keydown', _onCmdKey);
+  _renderCmdList('');
+  setTimeout(() => input.focus(), 10);
+}
+
+function closeCmdPalette() {
+  if (!_palette) return;
+  _palette.remove();
+  _palette = null;
+  _paletteResults = [];
+}
+
+function _onCmdInput(e) {
+  const q = e.target.value;
+  _renderCmdList(q);
+}
+
+function _renderCmdList(q) {
+  const cmds = _availableCmds()
+    .map(c => ({ c, s: _scoreCmd(c, q) }))
+    .filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s)
+    .map(x => x.c);
+  _paletteResults = cmds;
+  _paletteIdx = 0;
+  const list = document.getElementById('cmdk-list');
+  if (!list) return;
+  if (cmds.length === 0) {
+    list.innerHTML = `<div class="cmdk-empty">No matching commands</div>`;
+    return;
+  }
+  list.innerHTML = cmds.map((c, i) => `
+    <div class="cmdk-item ${i === 0 ? 'active' : ''} ${c.danger ? 'danger' : ''}" data-cmd-i="${i}" role="option">
+      <span class="cmdk-label">${esc(c.label)}</span>
+      <span class="cmdk-keys">${esc(c.keys || '')}</span>
+    </div>`).join('');
+  list.querySelectorAll('.cmdk-item').forEach(el => {
+    el.addEventListener('mouseenter', () => _setCmdActive(parseInt(el.dataset.cmdI, 10)));
+    el.addEventListener('click', () => _runCmd(parseInt(el.dataset.cmdI, 10)));
+  });
+}
+
+function _setCmdActive(i) {
+  _paletteIdx = Math.max(0, Math.min(_paletteResults.length - 1, i));
+  const items = document.querySelectorAll('.cmdk-item');
+  items.forEach((el, idx) => el.classList.toggle('active', idx === _paletteIdx));
+  items[_paletteIdx]?.scrollIntoView({ block: 'nearest' });
+}
+
+function _runCmd(i) {
+  const cmd = _paletteResults[i];
+  if (!cmd) return;
+  closeCmdPalette();
+  try { cmd.run(); } catch (err) { ErrorBoundary.show(err, 'cmd:' + cmd.id); }
+}
+
+function _onCmdKey(e) {
+  if (e.key === 'ArrowDown') { e.preventDefault(); _setCmdActive(_paletteIdx + 1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); _setCmdActive(_paletteIdx - 1); }
+  else if (e.key === 'Enter') { e.preventDefault(); _runCmd(_paletteIdx); }
+  else if (e.key === 'Escape') { e.preventDefault(); closeCmdPalette(); }
+}
+
+// ── Run / node navigation ────────────────────────────────
+function _cycleRun(dir) {
+  if (state.runs.length === 0) return;
+  const i = state.runs.findIndex(r => r.id === state.activeRunId);
+  const next = state.runs[(i + dir + state.runs.length) % state.runs.length];
+  selectRun(next.id);
+}
+
+function _cycleNode(dir) {
+  const view = getActiveRunView();
+  if (!view || view.run.nodes.length === 0) return;
+  const nodes = view.run.nodes;
+  const i = nodes.findIndex(n => n.id === state.selectedNodeId);
+  const next = i === -1 ? nodes[0] : nodes[(i + dir + nodes.length) % nodes.length];
+  setState({ selectedNodeId: next.id });
+}
+
+// ── Global keys (replace existing _onKey) ────────────────
 function _onKey(e) {
-  if (e.key === 'Escape') { closeModal(); return; }
-  if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedNodeId && !modalOpen()) {
-    const tag = document.activeElement?.tagName;
-    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) deleteNode(state.selectedNodeId);
+  const tag = document.activeElement?.tagName;
+  const inField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
+  const mod = e.metaKey || e.ctrlKey;
+
+  // Palette toggle — works everywhere
+  if (mod && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openCmdPalette(); return; }
+
+  if (e.key === 'Escape') {
+    if (_palette) { closeCmdPalette(); return; }
+    if (_modalEl) { closeModal(); return; }
+    if (state.selectedNodeId) { setState({ selectedNodeId: null }); return; }
+  }
+
+  if (inField || _modalEl || _palette) return;
+
+  // ⌘N new run, ⌘I import, ⌘E export
+  if (mod && !e.shiftKey && !e.altKey) {
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openNewRunDialog(); return; }
+    if (e.key === 'i' || e.key === 'I') { e.preventDefault(); openImportDialog(); return; }
+    if (e.key === 'e' || e.key === 'E') { e.preventDefault(); handleExport(); return; }
+    if (e.key === 'Backspace')           { e.preventDefault(); deleteActiveRun(); return; }
+  }
+  // ⌘⇧N add node, ⌘⇧C new CF
+  if (mod && e.shiftKey) {
+    if (e.key === 'N' || e.key === 'n') { e.preventDefault(); openAddNodeDialog(); return; }
+    if (e.key === 'C' || e.key === 'c') { e.preventDefault(); openAddCfDialog(); return; }
+  }
+  // ⌘⌥R reset layout, ⌘⌥0 clear scenario
+  if (mod && e.altKey) {
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); resetLayout(); return; }
+    if (e.key === '0')                  { e.preventDefault(); setCf(''); return; }
+  }
+
+  // Single-key shortcuts
+  if (!mod && !e.altKey && !e.shiftKey) {
+    if (e.key === '/') { e.preventDefault(); openCmdPalette(); return; }
+    if (e.key === 'g' || e.key === 'G') { e.preventDefault(); setTab('graph'); return; }
+    if (e.key === 'c' || e.key === 'C') { e.preventDefault(); setTab('counterfactuals'); return; }
+    if (e.key === '?') { e.preventDefault(); openCmdPalette(); return; }
+    if (e.key === 'ArrowUp')    { e.preventDefault(); _cycleRun(-1); return; }
+    if (e.key === 'ArrowDown')  { e.preventDefault(); _cycleRun(1); return; }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); _cycleNode(-1); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); _cycleNode(1); return; }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedNodeId) {
+      e.preventDefault(); deleteNode(state.selectedNodeId); return;
+    }
   }
 }
 
