@@ -169,15 +169,21 @@ describe('layoutNodes()', () => {
     expect(positions.D.x).toBeGreaterThan(positions.B.x);
   });
 
-  test('sample data nodes can be laid out without error', () => {
-    const { runs } = ctx.makeSampleData();
-    runs.forEach(run => {
-      const positions = ctx.layoutNodes(run.nodes, run.edges);
-      run.nodes.forEach(n => {
-        expect(positions).toHaveProperty(n.id);
-        expect(typeof positions[n.id].x).toBe('number');
-        expect(typeof positions[n.id].y).toBe('number');
-      });
+  test('multi-node run can be laid out without error', () => {
+    const nodes = [
+      { id: 'n1' }, { id: 'n2' }, { id: 'n3' },
+      { id: 'n4' }, { id: 'n5' }, { id: 'n6' },
+    ];
+    const edges = [
+      { from: 'n1', to: 'n2' }, { from: 'n1', to: 'n3' },
+      { from: 'n2', to: 'n4' }, { from: 'n3', to: 'n4' },
+      { from: 'n4', to: 'n5' }, { from: 'n5', to: 'n6' },
+    ];
+    const positions = ctx.layoutNodes(nodes, edges);
+    nodes.forEach(n => {
+      expect(positions).toHaveProperty(n.id);
+      expect(typeof positions[n.id].x).toBe('number');
+      expect(typeof positions[n.id].y).toBe('number');
     });
   });
 });

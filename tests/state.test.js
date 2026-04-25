@@ -41,15 +41,14 @@ function makeRunWithCF(runOverrides = {}, cfOverrides = {}) {
 // ── _normalizeState (tested via setState return value) ────────────────────────
 
 describe('_normalizeState / initial state', () => {
-  test('initial state has runs from sample data when localStorage is empty', () => {
+  test('initial state has no runs when localStorage is empty', () => {
     const view = ctx.getActiveRunView();
-    expect(view).not.toBeNull();
-    expect(view.run).toBeDefined();
+    expect(view).toBeNull();
   });
 
-  test('initial state has a valid activeRunId', () => {
+  test('initial state activeRunId is null', () => {
     const newState = ctx.setState({});
-    expect(typeof newState.activeRunId).toBe('string');
+    expect(newState.activeRunId).toBeNull();
   });
 
   test('initial state activeTab is "graph"', () => {
@@ -57,10 +56,9 @@ describe('_normalizeState / initial state', () => {
     expect(newState.activeTab).toBe('graph');
   });
 
-  test('invalid activeRunId in patch is corrected to first run id', () => {
+  test('invalid activeRunId in patch with no runs is corrected to null', () => {
     const newState = ctx.setState({ activeRunId: 'nonexistent-run' });
-    const firstRunId = newState.runs[0].id;
-    expect(newState.activeRunId).toBe(firstRunId);
+    expect(newState.activeRunId).toBeNull();
   });
 
   test('activeTab is normalised: only "graph" or "counterfactuals" are valid', () => {
@@ -95,13 +93,9 @@ describe('_normalizeState — runs validation', () => {
     expect(newState.runs[0].id).toBe(run.id);
   });
 
-  test('invalid runs are filtered out; fallback to sample data when none survive', () => {
+  test('invalid runs are filtered out; empty array when none survive', () => {
     const newState = ctx.setState({ runs: [{ id: 'bad run', name: '' }] });
-    // The invalid run is dropped → falls back to sample data (2 runs)
-    expect(newState.runs.length).toBeGreaterThan(0);
-    newState.runs.forEach(r => {
-      expect(ctx.validateRunSchema(r)).toBeNull();
-    });
+    expect(newState.runs).toHaveLength(0);
   });
 
   test('runs are deep-cloned (mutations to original do not affect stored state)', () => {
@@ -160,7 +154,12 @@ describe('setState()', () => {
 // ── getActiveRunView() ────────────────────────────────────────────────────────
 
 describe('getActiveRunView()', () => {
-  test('returns a view object for the default active run', () => {
+  beforeEach(() => {
+    const run = makeRun();
+    ctx.setState({ runs: [run], activeRunId: run.id });
+  });
+
+  test('returns a view object for the active run', () => {
     const view = ctx.getActiveRunView();
     expect(view).not.toBeNull();
     expect(view.run).toBeDefined();
@@ -182,16 +181,9 @@ describe('getActiveRunView()', () => {
     expect(view.isCounterfactual).toBe(false);
   });
 
-  test('returns null when activeRunId is null', () => {
+  test('returns null when there are no runs', () => {
     ctx.setState({ runs: [], activeRunId: null });
-    // _normalizeState falls back to sample data, but let's test behavior when
-    // no run exists: supply a placeholder invalid state by checking the view
-    // after patching with a run that normalizes correctly but has no activeRunId
-    const newState = ctx.setState({ activeRunId: 'definitely-does-not-exist' });
-    // Falls back to first run — if runs exist
-    if (newState.runs.length > 0) {
-      expect(ctx.getActiveRunView()).not.toBeNull();
-    }
+    expect(ctx.getActiveRunView()).toBeNull();
   });
 });
 

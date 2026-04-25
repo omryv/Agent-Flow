@@ -5,89 +5,6 @@ const { createAppContext } = require('./helpers/loadContext');
 let ctx;
 beforeEach(() => { ctx = createAppContext(); });
 
-// ── makeSampleData() ──────────────────────────────────────────────────────────
-
-describe('makeSampleData()', () => {
-  test('returns an object with a runs array', () => {
-    const data = ctx.makeSampleData();
-    expect(Array.isArray(data.runs)).toBe(true);
-  });
-
-  test('returns exactly two runs', () => {
-    const data = ctx.makeSampleData();
-    expect(data.runs).toHaveLength(2);
-  });
-
-  test('each run passes validateRunSchema', () => {
-    const data = ctx.makeSampleData();
-    data.runs.forEach(run => {
-      expect(ctx.validateRunSchema(run)).toBeNull();
-    });
-  });
-
-  test('first run has counterfactuals', () => {
-    const { runs } = ctx.makeSampleData();
-    expect(Array.isArray(runs[0].counterfactuals)).toBe(true);
-    expect(runs[0].counterfactuals.length).toBeGreaterThan(0);
-  });
-
-  test('second run has an empty counterfactuals array', () => {
-    const { runs } = ctx.makeSampleData();
-    expect(runs[1].counterfactuals).toEqual([]);
-  });
-
-  test('activeRunId is set to the first run id', () => {
-    const data = ctx.makeSampleData();
-    expect(data.activeRunId).toBe(data.runs[0].id);
-  });
-
-  test('selectedNodeId is null', () => {
-    expect(ctx.makeSampleData().selectedNodeId).toBeNull();
-  });
-
-  test('activeTab is "graph"', () => {
-    expect(ctx.makeSampleData().activeTab).toBe('graph');
-  });
-
-  test('activeCounterfactual is null', () => {
-    expect(ctx.makeSampleData().activeCounterfactual).toBeNull();
-  });
-
-  test('runs have nodes with the expected roles', () => {
-    const validRoles = ['input', 'retrieve', 'plan', 'tool', 'synthesize', 'validate', 'output'];
-    const { runs } = ctx.makeSampleData();
-    runs.forEach(run => {
-      run.nodes.forEach(node => {
-        expect(validRoles).toContain(node.role);
-      });
-    });
-  });
-
-  test('runs have edges connecting existing node ids', () => {
-    const { runs } = ctx.makeSampleData();
-    runs.forEach(run => {
-      const nodeIds = new Set(run.nodes.map(n => n.id));
-      run.edges.forEach(e => {
-        expect(nodeIds.has(e.from)).toBe(true);
-        expect(nodeIds.has(e.to)).toBe(true);
-      });
-    });
-  });
-
-  test('runs have metrics with expected shape', () => {
-    const { runs } = ctx.makeSampleData();
-    runs.forEach(run => {
-      expect(typeof run.metrics.totalMs).toBe('number');
-      expect(typeof run.metrics.tokens).toBe('number');
-      expect(typeof run.metrics.nodes).toBe('number');
-      expect(typeof run.metrics.successful).toBe('number');
-      expect(typeof run.metrics.failed).toBe('number');
-    });
-  });
-});
-
-// ── validateRunSchema() ───────────────────────────────────────────────────────
-
 /** Minimal valid run fixture for building test variants. */
 function minimalValidRun() {
   return {
@@ -155,8 +72,6 @@ describe('validateRunSchema() — root-level errors', () => {
   });
 
   test('rejects an array — treated as an object missing id', () => {
-    // Arrays pass typeof === 'object' and !== null, so the schema proceeds to
-    // validate the id field (which is absent on an array), producing an id error.
     expect(ctx.validateRunSchema([])).toMatch(/invalid "id"/);
   });
 

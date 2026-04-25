@@ -41,17 +41,8 @@ function buildHeader(view) {
   <div id="header">
     <div class="logo">${ICONS.logo} AgentFlow <span class="tagline">counterfactual trace engine</span></div>
     <div class="spacer"></div>
-    <button class="btn cmdk-trigger" data-action="openCmdPalette" title="Command palette (⌘K)" aria-label="Command palette">
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M9.2 9.2L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      <span class="cmdk-trigger-label">Search</span>
-      <kbd class="cmdk-trigger-kbd">⌘K</kbd>
-    </button>
     ${run ? `<button class="btn" data-action="handleExport" title="Export (⌘E)">${ICONS.export} Export</button>` : ''}
     <button class="btn" data-action="openImportDialog" title="Import (⌘I)">${ICONS.import} Import</button>
-    <button class="btn primary" data-action="openNewRunDialog" title="New Run (⌘N)">${ICONS.plus} New Run</button>
   </div>`;
 }
 function buildSidebar() {
@@ -63,7 +54,7 @@ function buildSidebar() {
       <span style="font-size:11px;color:var(--text-3)">${runs.length} trace${runs.length !== 1 ? 's' : ''}</span>
     </div>
     <div id="runs-list">
-      ${runs.length === 0 ? `<div class="no-runs-msg">No runs yet.<br>Import or create one.</div>` : ''}
+      ${runs.length === 0 ? `<div class="no-runs-msg">No runs yet.<br>Import one.</div>` : ''}
       ${runs.map(r => buildRunItem(r)).join('')}
     </div>
   </div>`;
@@ -90,8 +81,8 @@ function buildCanvasArea(view) {
       <div id="empty-state">
         ${ICONS.cursor}
         <h2>No run selected</h2>
-        <p>Create a new run or import a .agentflow.json file to get started.</p>
-        <button class="btn primary" data-action="openNewRunDialog">${ICONS.plus} New Run</button>
+        <p>Import a .agentflow.json file to get started.</p>
+        <button class="btn primary" data-action="openImportDialog">${ICONS.import} Import</button>
       </div>
     </div>`;
   }
@@ -122,9 +113,6 @@ function buildCanvasArea(view) {
           </select>
         </div>
         ${isCounterfactual ? `<span id="cf-badge">${ICONS.cf} Counterfactual active</span>` : ''}
-        <button class="btn" data-action="openAddNodeDialog" title="Add node">${ICONS.node} Add Node</button>
-        <button class="btn" data-action="openAddCfDialog" title="New counterfactual">${ICONS.cf} New Scenario</button>
-        <button class="btn danger" data-action="deleteActiveRun" title="Delete run" aria-label="Delete run">${ICONS.delete}</button>
       ` : ''}
     </div>
     ${buildLegend()}
@@ -205,7 +193,7 @@ function buildCfTab(view) {
       <div class="detail-empty-state" style="padding:48px;">
         ${ICONS.cf}
         <p style="margin-top:16px;font-size:13px;color:var(--text-2);">No counterfactuals yet.</p>
-        <p style="margin-top:6px;font-size:12px;">Create one using "New Scenario" in the toolbar.</p>
+        <p style="margin-top:6px;font-size:12px;">No counterfactuals in this run.</p>
       </div>
     </div>`;
   }
@@ -344,11 +332,6 @@ function buildDetail(view) {
         </div>
         <div class="detail-content-box" style="opacity:.6">${esc(originalNode.content)}</div>
       </div>` : ''}
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-        <button class="btn" data-action="openEditNodeDialog" data-id="${esc(node.id)}">Edit Node</button>
-        <button class="btn danger" data-action="deleteNode" data-id="${esc(node.id)}">${ICONS.delete} Delete</button>
-      </div>
     </div>
   </div>`;
 }

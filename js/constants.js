@@ -20,10 +20,6 @@ const ICONS = {
     <path d="M11 9L15.5 12.5" stroke="#6c8eff" stroke-width="1.2" stroke-linecap="round"/>
   </svg>`,
 
-  plus: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-    <path d="M6.5 2v9M2 6.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  </svg>`,
-
   import: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
     <path d="M6.5 1.5v7M4 6.5l2.5 2.5L9 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M1.5 10.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -32,15 +28,6 @@ const ICONS = {
   export: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
     <path d="M6.5 9V2M4 4.5L6.5 2 9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M1.5 10.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>`,
-
-  delete: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-    <path d="M2.5 4h8M5 4V2.5h3V4M5.5 6v4M7.5 6v4M3.5 4l.7 7h5.6l.7-7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-
-  node: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-    <rect x="1.5" y="3.5" width="10" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
-    <path d="M4.5 6.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
   </svg>`,
 
   cf: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">

@@ -1,12 +1,12 @@
 # AgentFlow — Codebase Overview, Test Documentation & Verification Report
 
-> Generated 2026-04-25. All 251 tests verified passing (`npm test`).
+> Generated 2026-04-25. All 239 tests verified passing (`npm test`).
 
 ---
 
 ## 1. What Is This Repository?
 
-**AgentFlow** is a zero-dependency, zero-build-step, browser-based tool for visualising, inspecting, and counterfactually replaying LLM agent execution traces. It imports traces from LangSmith, LangFuse, or W&B Weave, renders them as interactive directed acyclic graphs (DAGs), and lets users override any node's status/content to immediately see how downstream nodes, metrics, and the final answer change.
+**AgentFlow** is a zero-dependency, zero-build-step, browser-based read-only counterfactual inspector for LLM agent execution traces. It imports traces from LangSmith, LangFuse, or W&B Weave, renders them as interactive directed acyclic graphs (DAGs), and lets users inspect how node overrides in counterfactual scenarios change downstream metrics and the final answer.
 
 ---
 
@@ -34,7 +34,7 @@ Agent-Flow/
 ├── js/
 │   ├── constants.js         # ICONS (SVG), ROLES, STATUSES, SAFE_ID_RE regex
 │   ├── utils.js             # esc(), escAttr(), clampStr(), SafeStore, ErrorBoundary
-│   ├── data.js              # makeSampleData(), validateRunSchema()
+│   ├── data.js              # validateRunSchema()
 │   ├── state.js             # Global state atom, setState(), getActiveRunView(),
 │   │                        #   _normalizeState(), _materializeCounterfactualRun(),
 │   │                        #   _cloneNode/Edge/Run/NodePositions()
@@ -42,19 +42,17 @@ Agent-Flow/
 │   ├── adapters.js          # importFromThirdParty(), fromLangSmith/LangFuse/Weave(),
 │   │                        #   detectFormat(), inferRole(), inferStatus(),
 │   │                        #   safeId(), msDiff(), truncate()
-│   ├── drag.js              # Mouse-drag mechanics (direct DOM mutation at 60 fps,
-│   │                        #   commit to state on mouse-up)
 │   ├── render.js            # HTML string builders for every UI region
-│   ├── events.js            # All DOM event handlers (import, export, node click, etc.)
+│   ├── events.js            # DOM event handlers (import, export, node/run/tab/cf navigation)
 │   └── main.js              # Boot: installs ErrorBoundary, calls render()
 ├── tests/
 │   ├── helpers/
-│   │   └── loadContext.js   # vm sandbox factory — mocks browser globals for Node tests
-│   ├── adapters.test.js     # 103 tests: adapter helpers + all 3 import formats
-│   ├── data.test.js         # 47 tests: makeSampleData() + validateRunSchema()
-│   ├── layout.test.js       # 14 tests: layoutNodes()
-│   ├── state.test.js        # 53 tests: state management & counterfactual materialisation
-│   └── utils.test.js        # 34 tests: esc(), escAttr(), clampStr(), SafeStore
+│   │   └── loadContext.js       # vm sandbox factory — mocks browser globals for Node tests
+│   ├── adapters.test.js         # 103 tests: adapter helpers + all 3 import formats
+│   ├── data-validation.test.js  # 35 tests: validateRunSchema()
+│   ├── layout.test.js           # 14 tests: layoutNodes()
+│   ├── state.test.js            # 53 tests: state management & counterfactual materialisation
+│   └── utils.test.js            # 34 tests: esc(), escAttr(), clampStr(), SafeStore
 ├── package.json             # Jest 29 dev dependency; test script
 ├── vercel.json              # Security headers, asset caching, SPA rewrites
 └── README.md                # Project overview and roadmap
@@ -63,7 +61,7 @@ Agent-Flow/
 ### Script Load Order (mirrors `<script>` tags in `index.html`)
 
 ```
-constants → utils → data → state → layout → adapters → drag → render → events → main
+constants → utils → data → state → layout → adapters → render → events → main
 ```
 
 Each file depends only on symbols exported by files loaded before it.
@@ -107,9 +105,9 @@ A *run* can carry a `counterfactuals[]` array. Each counterfactual specifies `no
 
 ## 5. Test Suites — Detailed Breakdown
 
-Tests run via `npm test` (Jest 29, `testEnvironment: node`). All source files except DOM-dependent ones (`drag.js`, `render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks `localStorage`, `document`, `window`, `location`, `URL`, and `CSS`.
+Tests run via `npm test` (Jest 29, `testEnvironment: node`). All source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks `localStorage`, `document`, `window`, `location`, `URL`, and `CSS`.
 
-**Overall result: 251 tests — 251 passed, 0 failed, 0 skipped.**
+**Overall result: 239 tests — 239 passed, 0 failed, 0 skipped.**
 
 ---
 
@@ -181,31 +179,14 @@ Exercises the `SafeStore` IIFE (load/save/clear against mocked `localStorage`).
 |---|---|---|---|
 | setState persists to localStorage under `agentflow.v1` | state saved as JSON string | `JSON.parse` round-trip, checks `.runs` and `.activeRunId` | parsed object with `runs` array |
 | state loaded from localStorage on init | pre-seeded localStorage is read on context creation | creates second context with same store; checks `getActiveRunView()` returns non-null | view object with a run |
-| corrupted localStorage falls back to sample data | invalid JSON (`{ invalid json !!!`) does not crash | `getActiveRunView()` still returns a valid view | valid run view from sample data |
-| oversized data is not saved | normal save returns truthy state | `setState` return value checked: has `.runs.length > 0` | normalised state object |
+| corrupted localStorage falls back to empty state | invalid JSON (`{ invalid json !!!`) does not crash | `getActiveRunView()` returns `null` (no runs) | `null` |
+| oversized data is not saved | normal save returns valid state object | `setState` return value is an object with a `runs` array | normalised state object |
 
 ---
 
-### 5.2 `tests/data.test.js` — 47 tests
+### 5.2 `tests/data-validation.test.js` — 35 tests
 
-Tests `makeSampleData()` and the full `validateRunSchema()` validator in `js/data.js`.
-
-#### `makeSampleData()` — 12 tests
-
-| Test | What It Checks | How Verified | Final Output |
-|---|---|---|---|
-| returns an object with a runs array | `data.runs` is an array | `Array.isArray` | `true` |
-| returns exactly two runs | `data.runs.length === 2` | `toHaveLength(2)` | `2` |
-| each run passes validateRunSchema | no schema error | `toBeNull()` for each run | `null` (no error) |
-| first run has counterfactuals | `runs[0].counterfactuals.length > 0` | `toBeGreaterThan(0)` | `2` |
-| second run has empty counterfactuals | `runs[1].counterfactuals` equals `[]` | `toEqual([])` | `[]` |
-| activeRunId is set to first run id | `data.activeRunId === data.runs[0].id` | `toBe` | `'run-1'` |
-| selectedNodeId is null | `data.selectedNodeId === null` | `toBeNull()` | `null` |
-| activeTab is "graph" | `data.activeTab === 'graph'` | `toBe('graph')` | `'graph'` |
-| activeCounterfactual is null | `data.activeCounterfactual === null` | `toBeNull()` | `null` |
-| runs have nodes with expected roles | every node.role is in the ROLES allow-list | `toContain(node.role)` for every node | all pass |
-| runs have edges connecting existing node ids | `e.from` and `e.to` are valid node IDs | `toHaveProperty` / `has()` | all pass |
-| runs have metrics with expected shape | `totalMs`, `tokens`, `nodes`, `successful`, `failed` are numbers | `typeof === 'number'` per key | all pass |
+Tests the full `validateRunSchema()` validator in `js/data.js`.
 
 #### `validateRunSchema()` — happy path, 5 tests
 
@@ -299,7 +280,7 @@ Tests `layoutNodes(nodes, edges)` in `js/layout.js`.
 | cycle A→B, B→A (fallback) | BFS stalls; both get positions via post-pass | `A.x !== B.x` (different layers) |
 | sink node rightmost | A→B→C; C has largest x | `C.x > B.x > A.x` |
 | diamond graph A→B, A→C, B→D, C→D | D is beyond B/C | `D.x > B.x` |
-| sample data layout | both built-in runs can be laid out | all nodes have numeric `x, y` |
+| multi-node run layout | 6-node DAG can be laid out | all nodes have numeric `x, y` |
 
 ---
 
@@ -311,10 +292,10 @@ Tests all state management logic in `js/state.js`.
 
 | Test | What It Checks | Final Output |
 |---|---|---|
-| initial state has runs from sample data | `getActiveRunView()` non-null with empty localStorage | non-null view object |
-| initial state has valid `activeRunId` | `typeof activeRunId === 'string'` | string |
+| initial state has no runs with empty localStorage | `getActiveRunView()` is null | `null` |
+| initial state `activeRunId` is null | no runs → null | `null` |
 | initial state `activeTab` is `'graph'` | default tab | `'graph'` |
-| invalid `activeRunId` corrected | unknown run ID → falls back to first run ID | first run's ID |
+| invalid `activeRunId` with no runs corrected to null | unknown run ID, no runs | `null` |
 | `activeTab` normalised | only `'graph'` or `'counterfactuals'` are valid | unknown tab → `'graph'` |
 | invalid `activeCounterfactual` set to null | unknown CF ID | `null` |
 | invalid `selectedNodeId` set to null | unknown node ID | `null` |
@@ -325,7 +306,7 @@ Tests all state management logic in `js/state.js`.
 | Test | What It Checks | Final Output |
 |---|---|---|
 | valid runs preserved | run passing schema stays | same run |
-| invalid runs filtered; fallback to sample data | schema-failing run dropped | sample data runs |
+| invalid runs filtered; empty array when none survive | schema-failing run dropped | `[]` |
 | runs are deep-cloned | mutating original does not affect stored state | stored run unaffected |
 
 #### `setState()` — 6 tests
@@ -343,10 +324,10 @@ Tests all state management logic in `js/state.js`.
 
 | Test | What It Checks | Final Output |
 |---|---|---|
-| returns view object for default run | `run`, `originalRun`, `isCounterfactual`, `overriddenNodeIds` present | view object |
-| `overriddenNodeIds` empty for base run | no overrides on default | `Set.size === 0` |
+| returns view object for active run | `run`, `originalRun`, `isCounterfactual`, `overriddenNodeIds` present | view object |
+| `overriddenNodeIds` empty for base run | no overrides on base run | `Set.size === 0` |
 | `isCounterfactual` false when CF is null | base mode | `false` |
-| returns null when no run exists | after patching to non-existent run ID | falls back to sample; non-null view |
+| returns null when there are no runs | after clearing all runs | `null` |
 
 #### `_buildRunView()` — counterfactual view — 8 tests
 
