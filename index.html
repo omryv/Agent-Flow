@@ -1,21 +1,38 @@
 <!DOCTYPE html>
 <!--
-  AgentFlow
-  Copyright (c) 2026 Omry Damari - 'Visigence' All rights reserved.
-  Proprietary and confidential.
-  Unauthorized copying, modification, distribution, or use is prohibited.
+  AgentFlow — Copyright (c) 2026 Omry Damari / Visigence.
+  Proprietary and confidential. All rights reserved.
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        content="
+          default-src 'self';
+          script-src 'self';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' data:;
+          font-src 'self' data:;
+          connect-src 'self';
+          object-src 'none';
+          base-uri 'none';
+          frame-ancestors 'none';
+          form-action 'none';
+          manifest-src 'self';
+          worker-src 'self';
+          upgrade-insecure-requests">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#07080d">
   <title>AgentFlow — Counterfactual Trace Engine</title>
   <link rel="stylesheet" href="css/styles.css"/>
 </head>
 <body>
   <div id="app"></div>
+  <noscript><div style="padding:24px;color:#ecf0fb;font-family:system-ui">This app requires JavaScript.</div></noscript>
 
   <script src="js/constants.js"></script>
   <script src="js/utils.js"></script>

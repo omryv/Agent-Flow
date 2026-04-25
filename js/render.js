@@ -1,17 +1,11 @@
-/*!
- * AgentFlow
- * Copyright (c) 2026 Visigence. All rights reserved.
- * Proprietary and confidential.
- * Unauthorized copying, modification, distribution, or use is prohibited.
- */
+/*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
 'use strict';
 
-
-
-function render() {
+const _render = function render() {
   document.getElementById('app').innerHTML = buildHTML();
   attachEvents();
-}
+};
+const render = ErrorBoundary.wrap(_render, 'render');
 
 function buildHTML() {
   const view = getActiveRunView();
@@ -31,12 +25,19 @@ function buildHeader(view) {
   <div id="header">
     <div class="logo">${ICONS.logo} AgentFlow <span class="tagline">counterfactual trace engine</span></div>
     <div class="spacer"></div>
-    ${run ? `<button class="btn" onclick="handleExport()">${ICONS.export} Export</button>` : ''}
-    <button class="btn" onclick="openImportDialog()">${ICONS.import} Import</button>
-    <button class="btn primary" onclick="openNewRunDialog()">${ICONS.plus} New Run</button>
+    <button class="btn cmdk-trigger" data-action="openCmdPalette" title="Command palette (⌘K)" aria-label="Command palette">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M9.2 9.2L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="cmdk-trigger-label">Search</span>
+      <kbd class="cmdk-trigger-kbd">⌘K</kbd>
+    </button>
+    ${run ? `<button class="btn" data-action="handleExport" title="Export (⌘E)">${ICONS.export} Export</button>` : ''}
+    <button class="btn" data-action="openImportDialog" title="Import (⌘I)">${ICONS.import} Import</button>
+    <button class="btn primary" data-action="openNewRunDialog" title="New Run (⌘N)">${ICONS.plus} New Run</button>
   </div>`;
 }
-
 function buildSidebar() {
   const runs = state.runs;
   return `
@@ -55,15 +56,15 @@ function buildSidebar() {
 function buildRunItem(r) {
   const active = r.id === state.activeRunId;
   const t = new Date(r.createdAt);
-  const timeStr = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const failed = r.metrics.failed;
+  const timeStr = isNaN(t) ? '' : t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const failed = r.metrics?.failed || 0;
   return `
-  <div class="run-item ${active ? 'active' : ''}" onclick="selectRun('${esc(r.id)}')">
+  <div class="run-item ${active ? 'active' : ''}" data-action="selectRun" data-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="run-meta">
       <div class="run-name">${esc(r.name)}</div>
-      <div class="run-sub">${timeStr} · ${r.nodes.length} nodes</div>
+      <div class="run-sub">${esc(timeStr)} · ${r.nodes.length} nodes</div>
     </div>
-    ${failed > 0 ? `<span class="run-badge" style="color:var(--danger)">${failed} err</span>` : ''}
+    ${failed > 0 ? `<span class="run-badge">${failed} err</span>` : ''}
   </div>`;
 }
 
@@ -74,31 +75,30 @@ function buildCanvasArea(view) {
         ${ICONS.cursor}
         <h2>No run selected</h2>
         <p>Create a new run or import a .agentflow.json file to get started.</p>
-        <button class="btn primary" onclick="openNewRunDialog()">${ICONS.plus} New Run</button>
+        <button class="btn primary" data-action="openNewRunDialog">${ICONS.plus} New Run</button>
       </div>
     </div>`;
   }
-
   const { run, isCounterfactual } = view;
-  const activeCfId  = state.activeCounterfactual;
+  const activeCfId = state.activeCounterfactual;
   const originalRun = view.originalRun || run;
-  const realCfList  = originalRun.counterfactuals || [];
+  const realCfList = originalRun.counterfactuals || [];
 
   return `
   <div id="canvas-area">
     <div id="toolbar">
       <span class="section-label">View</span>
       <div class="tab-bar">
-        <div class="tab ${state.activeTab === 'graph'            ? 'active' : ''}" onclick="setTab('graph')">Graph</div>
-        <div class="tab ${state.activeTab === 'counterfactuals'  ? 'active' : ''}" onclick="setTab('counterfactuals')">
+        <div class="tab ${state.activeTab === 'graph' ? 'active' : ''}" data-action="setTab" data-id="graph" role="tab">Graph</div>
+        <div class="tab ${state.activeTab === 'counterfactuals' ? 'active' : ''}" data-action="setTab" data-id="counterfactuals" role="tab">
           Counterfactuals <span style="font-size:10px;color:var(--text-3);margin-left:3px">${realCfList.length}</span>
         </div>
       </div>
       <div style="flex:1"></div>
       ${state.activeTab === 'graph' ? `
         <div class="cf-selector">
-          <label>Scenario:</label>
-          <select onchange="setCf(this.value)">
+          <label for="cf-select">Scenario:</label>
+          <select id="cf-select" data-change="setCf">
             <option value="">Original run</option>
             ${realCfList.map(c =>
               `<option value="${esc(c.id)}" ${activeCfId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`
@@ -106,10 +106,10 @@ function buildCanvasArea(view) {
           </select>
         </div>
         ${isCounterfactual ? `<span id="cf-badge">${ICONS.cf} Counterfactual active</span>` : ''}
-        <button class="btn" onclick="openAddNodeDialog()" title="Add node">${ICONS.node} Add Node</button>
-        <button class="btn" onclick="openAddCfDialog()"   title="New counterfactual">${ICONS.cf} New Scenario</button>
-        <button class="btn" onclick="resetLayout()"        title="Reset node positions">↺ Reset Layout</button>
-        <button class="btn danger" onclick="deleteActiveRun()" title="Delete run">${ICONS.delete}</button>
+        <button class="btn" data-action="openAddNodeDialog" title="Add node">${ICONS.node} Add Node</button>
+        <button class="btn" data-action="openAddCfDialog" title="New counterfactual">${ICONS.cf} New Scenario</button>
+        <button class="btn" data-action="resetLayout" title="Reset node positions">↺ Reset Layout</button>
+        <button class="btn danger" data-action="deleteActiveRun" title="Delete run" aria-label="Delete run">${ICONS.delete}</button>
       ` : ''}
     </div>
     ${buildLegend()}
@@ -123,18 +123,15 @@ function buildLegend() {
     ${Object.entries(ROLES).map(([k, v]) => `
       <div class="legend-item">
         <div class="legend-dot" style="background:${v.color}"></div>
-        <span>${v.label}</span>
+        <span>${esc(v.label)}</span>
       </div>`).join('')}
   </div>`;
 }
 
 function buildGraph(view) {
   const { run, overriddenNodeIds } = view;
-
-  // ── positions: stored overrides win over auto-layout ──────────────────────
   const positions = getPositionsForRun(state.activeRunId, run);
 
-  // ── canvas dimensions ─────────────────────────────────────────────────────
   const nodeW = 220;
   let maxX = 0, maxY = 0;
   Object.values(positions).forEach(p => {
@@ -143,50 +140,38 @@ function buildGraph(view) {
   });
   const cw = maxX + 60, ch = Math.max(maxY + 60, 500);
 
-  // ── nodes ─────────────────────────────────────────────────────────────────
   const nodesHTML = run.nodes.map(node => {
-    const pos       = positions[node.id];
+    const pos = positions[node.id];
     if (!pos) return '';
-    const role      = ROLES[node.role]   || ROLES.input;
+    const role = ROLES[node.role] || ROLES.input;
     const statusDef = STATUSES[node.status] || STATUSES.pending;
-    const isSelected   = state.selectedNodeId === node.id;
+    const isSelected = state.selectedNodeId === node.id;
     const isCfOverride = overriddenNodeIds.has(node.id);
 
     return `
-    <div class="node-wrapper"
-         data-node-id="${esc(node.id)}"
-         style="left:${pos.x}px;top:${pos.y}px;">
+    <div class="node-wrapper" data-node-id="${esc(node.id)}" style="left:${pos.x}px;top:${pos.y}px;">
       <div class="node ${isSelected ? 'selected' : ''} ${isCfOverride ? 'cf-override' : ''}"
-           style="border-color:${isCfOverride ? 'var(--accent)' : 'var(--border)'}"
-           onclick="selectNode('${esc(node.id)}')">
-        <div class="node-header"
-             style="cursor:grab"
-             onmousedown="initDrag(event,'${esc(node.id)}')">
+           data-action="selectNode" data-id="${esc(node.id)}" role="button" tabindex="0">
+        <div class="node-header" style="cursor:grab" data-drag-handle data-drag-id="${esc(node.id)}">
           <div class="role-dot" style="background:${role.color}"></div>
-          <span class="role-label" style="color:${role.color}">${role.label}</span>
+          <span class="role-label" style="color:${role.color}">${esc(role.label)}</span>
         </div>
         <div class="node-name">${esc(node.name)}</div>
         <div class="node-content">${esc(node.content)}</div>
         <div class="node-footer">
           <div class="status-dot ${statusDef.cls}"></div>
-          <span class="status-label">${statusDef.label}</span>
-          ${node.durationMs !== undefined
-            ? `<span class="node-duration">${node.durationMs}ms</span>`
-            : ''}
+          <span class="status-label">${esc(statusDef.label)}</span>
+          ${node.durationMs !== undefined ? `<span class="node-duration">${Number(node.durationMs)|0}ms</span>` : ''}
         </div>
       </div>
     </div>`;
   }).join('');
 
-  // ── edges (SVG) ───────────────────────────────────────────────────────────
   const edgesHTML = run.edges.map(e => {
     const from = positions[e.from], to = positions[e.to];
     if (!from || !to) return '';
-    const isCf  = overriddenNodeIds.has(e.from) || overriddenNodeIds.has(e.to);
-    const pathD = makeEdgePath(from, to);
-    return `<path class="edge ${isCf ? 'cf' : ''}"
-                  data-edge-id="${esc(e.from + '__' + e.to)}"
-                  d="${pathD}"/>`;
+    const isCf = overriddenNodeIds.has(e.from) || overriddenNodeIds.has(e.to);
+    return `<path class="edge ${isCf ? 'cf' : ''}" data-edge-id="${esc(e.from + '__' + e.to)}" d="${esc(makeEdgePath(from, to))}"/>`;
   }).join('');
 
   return `
@@ -214,17 +199,17 @@ function buildCfTab(view) {
     ${cfs.map(cf => {
       const active = state.activeCounterfactual === cf.id;
       return `
-      <div class="cf-card ${active ? 'active' : ''}" onclick="toggleCf('${esc(cf.id)}')">
+      <div class="cf-card ${active ? 'active' : ''}" data-action="toggleCf" data-id="${esc(cf.id)}" role="button" tabindex="0">
         <div class="cf-card-title">
           ${ICONS.cf}
           ${esc(cf.name)}
-          ${active ? `<span style="font-size:10px;color:var(--accent);margin-left:auto">Active</span>` : ''}
+          ${active ? `<span style="font-size:10px;color:var(--accent-2);margin-left:auto">Active</span>` : ''}
         </div>
         <div class="cf-card-desc">${esc(cf.description || '')}</div>
         <div class="cf-overrides">
           ${Object.keys(cf.nodeOverrides).map(nid => {
             const node = originalRun.nodes.find(n => n.id === nid);
-            return `<span class="cf-override-tag">${node ? esc(node.name) : nid}</span>`;
+            return `<span class="cf-override-tag">${esc(node ? node.name : nid)}</span>`;
           }).join('')}
         </div>
       </div>`;
@@ -235,15 +220,15 @@ function buildCfTab(view) {
 function buildMetricsBar(view) {
   if (!view) return '';
   const { run, isCounterfactual, originalRun } = view;
-  const m  = run.metrics;
+  const m = run.metrics;
   const om = isCounterfactual && originalRun ? originalRun.metrics : null;
 
   function delta(key, unit, invert) {
     if (!om) return '';
-    const diff = m[key] - om[key];
+    const diff = (m[key] || 0) - (om[key] || 0);
     if (diff === 0) return '';
     const sign = diff > 0 ? '+' : '';
-    const cls  = (diff > 0) === !invert ? 'pos' : 'neg';
+    const cls = (diff > 0) === !invert ? 'pos' : 'neg';
     return `<span class="metric-delta ${cls}">${sign}${diff}${unit}</span>`;
   }
 
@@ -251,37 +236,35 @@ function buildMetricsBar(view) {
   <div id="metrics-bar">
     <div class="metric">
       <div class="metric-label">TOTAL TIME</div>
-      <div class="metric-value" style="color:var(--accent)">${m.totalMs.toLocaleString()}ms</div>
+      <div class="metric-value" style="color:var(--accent-2)">${(m.totalMs|0).toLocaleString()}ms</div>
       ${delta('totalMs', 'ms', true)}
     </div>
     <div class="metric-sep"></div>
     <div class="metric">
       <div class="metric-label">TOKENS</div>
-      <div class="metric-value">${m.tokens.toLocaleString()}</div>
+      <div class="metric-value">${(m.tokens|0).toLocaleString()}</div>
       ${delta('tokens', '', true)}
     </div>
     <div class="metric-sep"></div>
     <div class="metric">
       <div class="metric-label">NODES</div>
-      <div class="metric-value">${m.nodes}</div>
+      <div class="metric-value">${m.nodes|0}</div>
     </div>
     <div class="metric-sep"></div>
     <div class="metric">
       <div class="metric-label">SUCCESSFUL</div>
-      <div class="metric-value" style="color:var(--success)">${m.successful}</div>
+      <div class="metric-value" style="color:var(--success)">${m.successful|0}</div>
     </div>
     ${m.failed > 0 ? `
     <div class="metric-sep"></div>
     <div class="metric">
       <div class="metric-label">FAILED</div>
-      <div class="metric-value" style="color:var(--danger)">${m.failed}</div>
+      <div class="metric-value" style="color:var(--danger)">${m.failed|0}</div>
     </div>` : ''}
     <div style="flex:1"></div>
     ${run.finalAnswer ? `
     <div id="answer-panel">
-      <h3>Final Answer ${isCounterfactual
-        ? '<span style="color:var(--accent)">(counterfactual)</span>'
-        : ''}</h3>
+      <h3>Final Answer ${isCounterfactual ? '<span style="color:var(--accent-2)">(counterfactual)</span>' : ''}</h3>
       <div class="answer-box ${isCounterfactual ? 'cf' : ''}">${esc(run.finalAnswer)}</div>
     </div>` : ''}
   </div>`;
@@ -293,7 +276,6 @@ function buildDetail(view) {
       <div class="detail-empty-state">${ICONS.cursor}<p>Select a run</p></div>
     </div>`;
   }
-
   const node = view.run.nodes.find(n => n.id === state.selectedNodeId);
   if (!node) {
     return `<div id="detail" class="empty">
@@ -303,42 +285,28 @@ function buildDetail(view) {
       </div>
     </div>`;
   }
-
-  const role         = ROLES[node.role]      || ROLES.input;
-  const statusDef    = STATUSES[node.status] || STATUSES.pending;
+  const role = ROLES[node.role] || ROLES.input;
+  const statusDef = STATUSES[node.status] || STATUSES.pending;
   const isCfOverride = view.overriddenNodeIds.has(node.id);
   const originalNode = view.isCounterfactual && view.originalRun
-    ? view.originalRun.nodes.find(n => n.id === node.id)
-    : null;
+    ? view.originalRun.nodes.find(n => n.id === node.id) : null;
 
   return `<div id="detail">
     <div id="detail-inner">
-      ${isCfOverride ? `
-        <div class="cf-note">
-          ${ICONS.info} This node was modified by the counterfactual scenario.
-        </div>` : ''}
+      ${isCfOverride ? `<div class="cf-note">${ICONS.info} This node was modified by the counterfactual scenario.</div>` : ''}
 
       <div class="detail-section">
         <h3>Node</h3>
-        <div class="detail-row">
-          <span class="label">Name</span>
-          <span class="value">${esc(node.name)}</span>
-        </div>
-        <div class="detail-row">
-          <span class="label">Role</span>
-          <span class="value" style="color:${role.color}">${role.label}</span>
-        </div>
+        <div class="detail-row"><span class="label">Name</span><span class="value">${esc(node.name)}</span></div>
+        <div class="detail-row"><span class="label">Role</span><span class="value" style="color:${role.color}">${esc(role.label)}</span></div>
         <div class="detail-row">
           <span class="label">Status</span>
           <span class="value" style="display:flex;align-items:center;gap:6px">
-            <span class="status-dot ${statusDef.cls}"></span>${statusDef.label}
+            <span class="status-dot ${statusDef.cls}"></span>${esc(statusDef.label)}
           </span>
         </div>
         ${node.durationMs !== undefined ? `
-        <div class="detail-row">
-          <span class="label">Duration</span>
-          <span class="value">${node.durationMs}ms</span>
-        </div>` : ''}
+        <div class="detail-row"><span class="label">Duration</span><span class="value">${Number(node.durationMs)|0}ms</span></div>` : ''}
         <div class="detail-row">
           <span class="label">ID</span>
           <span class="value" style="color:var(--text-3);font-family:var(--mono);font-size:11px">${esc(node.id)}</span>
@@ -357,15 +325,15 @@ function buildDetail(view) {
           <span class="label">Status</span>
           <span class="value" style="display:flex;align-items:center;gap:6px">
             <span class="status-dot ${STATUSES[originalNode.status]?.cls || 's-pending'}"></span>
-            ${STATUSES[originalNode.status]?.label || originalNode.status}
+            ${esc(STATUSES[originalNode.status]?.label || originalNode.status)}
           </span>
         </div>
         <div class="detail-content-box" style="opacity:.6">${esc(originalNode.content)}</div>
       </div>` : ''}
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-        <button class="btn" onclick="openEditNodeDialog('${esc(node.id)}')">Edit Node</button>
-        <button class="btn danger" onclick="deleteNode('${esc(node.id)}')">${ICONS.delete} Delete</button>
+        <button class="btn" data-action="openEditNodeDialog" data-id="${esc(node.id)}">Edit Node</button>
+        <button class="btn danger" data-action="deleteNode" data-id="${esc(node.id)}">${ICONS.delete} Delete</button>
       </div>
     </div>
   </div>`;
