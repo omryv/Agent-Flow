@@ -366,7 +366,7 @@ const ACTIONS = {
   closeModal, doImport, handleExport, openImportDialog, openNewRunDialog,
   createNewRun, openAddNodeDialog, addNode, openEditNodeDialog, saveEditNode,
   openAddCfDialog, createCf, deleteActiveRun, deleteNode, resetLayout,
-  selectRun, selectNode, setTab, setCf, toggleCf,
+  selectRun, selectNode, setTab, setCf, toggleCf, openCmdPalette,
   modalBackdrop(_id, _el, e) { if (e.target === _el) closeModal(); },
 };
 
