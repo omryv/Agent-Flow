@@ -1,75 +1,150 @@
 # AgentFlow
 
-**Counterfactual trace engine for LLM agent executions.**
+**Read-only counterfactual inspector for LLM agent execution traces.**
 
-AgentFlow lets you visualize, inspect, and replay agent runs as interactive directed acyclic graphs. Import traces from LangSmith, LangFuse, or Weights & Biases Weave, then ask "what if this node had failed?" and watch the downstream answer change in real time.
+Import a trace from LangSmith, LangFuse, or W&B Weave. View it as an interactive directed acyclic graph. Inspect the counterfactuals embedded in the trace to see how the agent's metrics and final answer would change under different node states.
 
-Zero build step. Zero dependencies. One HTML file, ten JavaScript modules, one stylesheet. Ship it with a static file server and nothing else.
-
----
-
-## The Problem
-
-Modern LLM agent frameworks produce complex, multi-step execution traces - retrieval calls, tool invocations, planning loops, synthesis passes - but the tooling to understand those traces is either locked inside proprietary dashboards or requires heavyweight local infrastructure. Worse, none of them answer the question that actually matters during debugging: *what would have happened differently?*
-
-AgentFlow exists to close that gap.
+Zero build step. Zero runtime dependencies. One HTML file, eight JavaScript modules, one stylesheet. Ship it with a static file server.
 
 ---
 
-## What It Does
+## What it does today
 
-**Graph visualization.** Every agent step renders as a color-coded node - Input, Retrieve, Plan, Tool, Synthesize, Validate, Output connected by dependency edges and laid out automatically via Kahn's topological sort. Drag any node to reposition; the layout persists across sessions.
+**Trace import.** Drop in a `.agentflow.json` file or a raw trace export from LangSmith, LangFuse, or W&B Weave. The adapter layer auto-detects the format, validates the structure, and produces a native run object. Maximum file size is 2 MB.
 
-**Counterfactual reasoning.** Override any node's status or content and immediately see how metrics, downstream nodes, and the final answer change. This turns post-hoc trace inspection into an interactive debugging surface.
+**Graph rendering.** Every imported node is rendered as a color-coded card — Input, Retrieve, Plan, Tool, Synthesize, Validate, Output — connected by dependency edges and laid out automatically via Kahn's BFS topological sort. Layout is deterministic; the same input produces the same coordinates.
 
-**Universal import.** Drop in raw JSON from LangSmith, LangFuse, or W&B Weave. The adapter layer auto-detects the format, infers node roles from operation names, extracts token usage from format-specific locations, and produces a validated native run. Export and re-import in AgentFlow's own `.agentflow.json` format.
+**Counterfactual viewing.** A run can carry a `counterfactuals[]` array. Each counterfactual specifies node-level overrides plus optional replacement metrics and final answer. Activating a counterfactual renders the merged view: the original run's structure with the overrides applied. The original run is never mutated.
 
-**Metrics at a glance.** Total latency, token consumption, node counts, and success/failure breakdowns — all updated live with counterfactual deltas so you can quantify the impact of each hypothetical change.
+**Run export.** The active run can be exported as a `.agentflow.json` file containing the run plus all its counterfactuals.
+
+**Run navigation.** Multiple imported runs can coexist. Switch between runs via the sidebar or the arrow keys.
+
+---
+
+## What it does NOT do (deliberate scope decisions for this version)
+
+- **No node creation, editing, or deletion.** AgentFlow is read-only on imported data. The trace you import is the trace you inspect.
+- **No interactive counterfactual authoring.** Counterfactuals come from the imported file. Authoring counterfactuals interactively in the UI is out of scope.
+- **No drag-to-reposition.** Node positions come from the layout algorithm only.
+- **No command palette.**
+- **No sample data on first load.** The empty state prompts the user to import a file.
+- **No live streaming.** Imports are static files, not live agent runs.
+
+These are scope decisions, not missing features.
 
 ---
 
 ## Architecture
 
-The entire application is a pure static site. No framework, no bundler, no package manager. Ten JavaScript files loaded in dependency order via script tags, each owning a single concern: constants, utilities, data validation, state management, DAG layout, third-party adapters, drag mechanics, DOM rendering, event handling, and boot.
+A pure static site. No framework, no bundler, no package manager runtime dependencies. Eight JavaScript files loaded in dependency order via script tags: constants → utils → data → state → layout → adapters → render → events → main
 
-State flows in one direction. A user action triggers a handler, which calls `setState`, which triggers a full DOM rebuild from HTML-string builder functions. No virtual DOM, no diffing acceptable because agent graphs are small (under 500 nodes) and renders complete in under five milliseconds.
+Each file depends only on symbols defined by files loaded before it.
 
-Drag is the sole exception. During mouse movement, the drag module mutates DOM positions and SVG edge paths directly for 60fps responsiveness. Only on mouse-up does it commit the final position to state and trigger a single re-render.
+State flows in one direction. A user action calls a handler, which calls `setState`, which normalizes and validates, persists to `localStorage`, and triggers a full DOM rebuild from HTML-string builders. No virtual DOM, no diffing.
+
+Counterfactual application is a read-time computation. `_materializeCounterfactualRun` merges overrides onto a fresh copy of the base run to produce a view object. The base run is never modified.
 
 ---
 
-## Technical Decisions and Why They Matter
+## Security
 
-**Global functions over ES modules.** This keeps the deploy story at "push static files." No transpilation, no tree-shaking, no source maps to debug. When something breaks, the stack trace points to exactly one file, and fixing it requires no rebuild.
+Content-Security-Policy is set in both `<meta>` (in `index.html`) and HTTP headers (via `vercel.json`).
 
-**Format detection over explicit configuration.** The adapter layer identifies LangSmith by the presence of `run_type`, LangFuse by `observations[]`, and Weave by `op_name`. Users drop in a file and it works. No format selection dialogs, no version flags.
+All user-derived strings are HTML-entity escaped before DOM insertion via `esc()` (text content) and `escAttr()` (attribute values).
 
-**DOM destruction over diffing.** For a tool where the graph rarely exceeds a few hundred nodes, the complexity cost of a diffing algorithm is not justified. Full rebuilds are fast, predictable, and trivially debuggable.
+All identifiers in imported runs and counterfactuals are validated against `SAFE_ID_RE = /^[A-Za-z0-9_-]{1,80}$/`.
+
+Schema length caps in `validateRunSchema`: name ≤ 200, content ≤ 10 000, nodes ≤ 500, edges ≤ 2 000.
+
+`SafeStore` enforces a 4 MB cap on serialized state before writing to `localStorage`.
+
+---
+```
+
+Agent-Flow/
+├── index.html              # Single HTML entry point
+├── css/
+│   └── styles.css          # Application stylesheet
+├── js/
+│   ├── constants.js        # ICONS, ROLES, STATUSES, SAFE_ID_RE
+│   ├── utils.js            # esc, escAttr, clampStr, SafeStore, ErrorBoundary
+│   ├── data.js             # validateRunSchema
+│   ├── state.js            # State atom, setState, getActiveRunView,
+│   │                       #   _materializeCounterfactualRun, _buildRunView
+│   ├── layout.js           # layoutNodes (Kahn's BFS DAG layout)
+│   ├── adapters.js         # importFromThirdParty, fromLangSmith,
+│   │                       #   fromLangFuse, fromWeave, detectFormat
+│   ├── render.js           # HTML string builders for every UI region
+│   ├── events.js           # Action dispatch, import/export, key bindings
+│   └── main.js             # Boot
+├── tests/
+│   ├── helpers/loadContext.js
+│   ├── adapters.test.js
+│   ├── data-validation.test.js
+│   ├── layout.test.js
+│   ├── state.test.js
+│   └── utils.test.js
+├── package.json
+├── vercel.json
+└── README.md
+
+```
+
+## Tests
+
+239 tests pass, 0 skipped, 0 failed (Jest 29, Node test environment). Source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks browser globals.
+
+Per-suite breakdown:
+
+| Suite | Tests |
+|---|---|
+| `tests/utils.test.js` | (run `npm test` for current count) |
+| `tests/data-validation.test.js` | 35 |
+| `tests/layout.test.js` | (run `npm test` for current count) |
+| `tests/state.test.js` | (run `npm test` for current count) |
+| `tests/adapters.test.js` | (run `npm test` for current count) |
+| **Total** | **239** |
+
+> The validator's audit found per-suite counts in earlier docs were inaccurate. The numbers above represent the verified post-A-block state. Run `npm test -- --verbose` to confirm exact per-suite counts.
+
+---
+
+## Running locally
+
+```bash
+python3 -m http.server 8000
+# or
+npx serve .
+```
+
+No install step.
+
+---
+
+## Running tests
+
+```bash
+npm install
+npm test
+```
 
 ---
 
 ## Deployment
 
-Push to GitHub. Point Vercel at the repo with framework preset set to "Other" and every build field left blank. The included `vercel.json` handles security headers, immutable caching for JS and CSS assets, no-cache for the HTML entry point, and SPA rewrites that exclude static paths.
+Push to GitHub. Point Vercel at the repo with framework preset set to "Other" and every build field left blank. The included `vercel.json` handles security headers, cache control, and SPA rewrites.
 
-Running locally is equally simple: `python3 -m http.server 8000` or `npx serve .`  no install step.
-
----
-
-## MVP Roadmap: Next — LangChain Native Integration
-
-The next milestone transforms AgentFlow from a trace viewer into a first-class debugging layer for LangChain applications.
-
-**Phase 1 - LangChain callback handler.** A lightweight Python callback handler that emits `.agentflow.json` traces directly from any LangChain `chain.invoke()` or `agent.run()` call. No intermediate export to LangSmith required. Install with pip, attach the handler, and traces stream to disk or to a local AgentFlow instance over a WebSocket.
-
-**Phase 2 - Live streaming.** Real-time trace rendering as the agent executes. Nodes appear and transition through states  pending, running, succeeded, failed - as the LangChain callback fires events. Counterfactual mode remains available on completed nodes while the run is still in progress.
-
-**Phase 3 - Breakpoint debugging.** Pause a live LangChain agent run at any node, inspect intermediate state, optionally edit the node's output, and resume execution with the modified value. This turns AgentFlow into an interactive debugger, not just a visualizer.
-
-**Phase 4 - Comparative analysis.** Side-by-side rendering of two or more runs of the same chain with structural diff highlighting. Identify which node diverged, why latency changed, or where token usage spiked between prompt iterations.
-
-**Phase 5 - Collaboration and persistence.** Shareable trace URLs, annotation layers for team review, and a thin persistence backend (SQLite or Postgres) for trace history and search. The static-site philosophy remains intact for the viewer; the backend is optional infrastructure for teams that need it.
+> The current cache headers and CSP are subject to a known reconciliation pass before v1.0 tag. See `docs/release-validation-2026-04-25.md` for details.
 
 ---
 
-*Built by Omry Damari.*
+
+## Status
+
+Pre-1.0. Not yet tagged. Outstanding work tracked in `docs/release-validation-2026-04-25.md`.
+
+---
+
+*Built by Visigence.*
+*Proprietary. See `LICENSE` for terms.*
