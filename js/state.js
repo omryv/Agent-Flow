@@ -69,7 +69,13 @@ function _materializeCounterfactualRun(run, cf) {
   return Object.assign({}, run, {
     nodes,
     edges,
-    metrics: Object.assign({}, cf.metrics || run.metrics || {}),
+    metrics: {
+      totalMs:    cf.metrics?.totalMs    ?? run.metrics?.totalMs    ?? 0,
+      tokens:     cf.metrics?.tokens     ?? run.metrics?.tokens     ?? 0,
+      nodes:      cf.metrics?.nodes      ?? run.metrics?.nodes      ?? 0,
+      successful: cf.metrics?.successful ?? run.metrics?.successful ?? 0,
+      failed:     cf.metrics?.failed     ?? run.metrics?.failed     ?? 0,
+    },
     finalAnswer: typeof cf.finalAnswer === 'string' ? cf.finalAnswer : run.finalAnswer,
   });
 }
@@ -116,6 +122,12 @@ function _buildRunView(run, counterfactualId) {
     }
   });
 
+  // Detect removed nodes: base nodes absent from the CF run
+  const cfNodeIds = new Set(cfRun.nodes.map(n => n.id));
+  run.nodes.forEach(node => {
+    if (!cfNodeIds.has(node.id)) overriddenNodeIds.add(node.id);
+  });
+
   return {
     run: cfRun,
     originalRun: run,
@@ -125,10 +137,9 @@ function _buildRunView(run, counterfactualId) {
 }
 
 function _normalizeState(raw) {
-  const fallback = makeSampleData();
-  const source = raw && typeof raw === 'object' ? raw : fallback;
+  const source = raw && typeof raw === 'object' ? raw : {};
   const validRuns = Array.isArray(source.runs) ? source.runs.filter(_isValidRun) : [];
-  const runs = (validRuns.length > 0 ? validRuns : fallback.runs).map(_cloneRun);
+  const runs = validRuns.map(_cloneRun);
   const runIds = new Set(runs.map(run => run.id));
 
   const activeRunId = typeof source.activeRunId === 'string' && runIds.has(source.activeRunId)
