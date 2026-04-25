@@ -3,7 +3,7 @@
 **Date:** 2025-04-25  
 **Validator:** Automated release-validation pass (all source files read in full, test suite executed, Node.js probes run for edge cases)  
 **Commit validated:** HEAD of `main` at time of this run  
-**Test result:** `npm test` → 251 tests, 5 suites, 0 failed, 0 skipped ✓
+**Test result:** `npm test` → 239 tests, 5 suites, 0 failed, 0 skipped ✓ *(updated: see PR feat/A-2-through-B-4)*
 
 ---
 
@@ -52,45 +52,15 @@ Because browsers apply both policies and enforce the intersection, the meta's st
 
 ---
 
-### B-3 — Removed-node CF case not detected in `overriddenNodeIds`  
-**File:** `js/state.js:100–117` (`_buildRunView`)  
-**Severity:** HIGH  
-
-`_buildRunView` iterates `cfRun.nodes` to build `overriddenNodeIds`. If a base-run node is absent from `cf.nodes`, the removal is never detected — the node does not receive the `cf-override` CSS class and the "modified by counterfactual" indicator is not shown.
-
-**Probe confirmation:** constructing a CF with `nodeOverrides` that sets `n2` to `null` (removal intent) and then checking `overriddenNodeIds` — `n2` is absent from the set. The canvas renders `n2` as unmodified.
-
-The docs describe three override cases: "added nodes, removed nodes, and field-only changes". Only field-only changes and additions are implemented. The removed-node case is silently ignored.  
-
-**Suggested fix:** After the `cfRun.nodes` loop, iterate `run.nodes` and add to `overriddenNodeIds` any node whose `id` is absent from `cfRun.nodes`.
+### B-3 — ~~Removed-node CF case not detected in `overriddenNodeIds`~~ ✅ RESOLVED  
+**File:** `js/state.js` (`_buildRunView`)  
+**Resolution (PR feat/A-2-through-B-4):** After the `cfRun.nodes` loop, a second pass over `run.nodes` adds any base-node id absent from `cfRun.nodes` to `overriddenNodeIds`.
 
 ---
 
-### B-4 — CF metrics is all-or-nothing; docs claim per-field fallback  
-**File:** `js/state.js:72` (`_materializeCounterfactualRun`)  
-**Severity:** HIGH  
-
-The code:  
-```js
-metrics: Object.assign({}, cf.metrics || run.metrics || {}),
-```  
-
-If `cf.metrics` is non-null but partial (e.g., `{ totalMs: 500 }` with no `tokens`, `nodes`, `successful`, or `failed`), the result omits those fields entirely. It does NOT fall back to the base run's value on a per-field basis.
-
-**CODEBASE_OVERVIEW.md section 3** states: "CF metrics fall back to run metrics on a per-field basis". This claim is false. The probe produced `{ totalMs: 500 }` from a CF with `{ totalMs: 500 }` and a base run with `{ totalMs: 100, tokens: 50, nodes: 1, successful: 1, failed: 0 }`. The `tokens`/`nodes`/`successful`/`failed` values are missing from the CF run.
-
-**Downstream impact:** The metrics bar will render blank or zero values for any CF whose author specifies only some metrics fields.  
-
-**Suggested fix:** Replace the single `Object.assign` with a per-field merge:  
-```js
-metrics: {
-  totalMs:    cf.metrics?.totalMs    ?? run.metrics?.totalMs    ?? 0,
-  tokens:     cf.metrics?.tokens     ?? run.metrics?.tokens     ?? 0,
-  nodes:      cf.metrics?.nodes      ?? run.metrics?.nodes      ?? 0,
-  successful: cf.metrics?.successful ?? run.metrics?.successful ?? 0,
-  failed:     cf.metrics?.failed     ?? run.metrics?.failed     ?? 0,
-},
-```
+### B-4 — ~~CF metrics is all-or-nothing; docs claim per-field fallback~~ ✅ RESOLVED  
+**File:** `js/state.js` (`_materializeCounterfactualRun`)  
+**Resolution (PR feat/A-2-through-B-4):** Replaced `Object.assign({}, cf.metrics || run.metrics || {})` with explicit per-field nullish coalescing for `totalMs`, `tokens`, `nodes`, `successful`, and `failed`.
 
 ---
 
@@ -139,14 +109,14 @@ This is a latent defect: any future code that writes `cfRun.counterfactuals.push
 ---
 
 ### B-8 — `setState` is not wrapped in `ErrorBoundary`  
-**File:** `js/state.js:164–168`; `js/utils.js:50–94`  
+**File:** `js/state.js` (`_normalizeState`); `js/utils.js`  
 **Severity:** MEDIUM  
 
-`ErrorBoundary.wrap` is applied to event handler functions dispatched through `_dispatch` (`events.js:373–378`). But `setState` itself is not wrapped. If `_normalizeState` or `makeSampleData` throws:  
+`ErrorBoundary.wrap` is applied to event handler functions dispatched through `_dispatch`. But `setState` itself is not wrapped. If `_normalizeState` throws:  
 - Calls via `_dispatch` are caught by `_dispatch`'s `try/catch`. ✓  
-- The call in `drag.js:75` (`_onUp`) is **not** wrapped. An error there propagates to the raw `mouseup` event listener. The global `window.onerror` handler installed by `ErrorBoundary.install` (`utils.js:87`) will eventually show the overlay, but the drag state may be left dirty.  
+- ~~The call in `drag.js:75` (`_onUp`) is **not** wrapped.~~ `drag.js` has been removed (PR A-1); this path no longer exists.  
 
-**Suggested fix:** Wrap the `setState(...)` call in `_onUp` with a try/catch or with `ErrorBoundary.wrap`.
+**Suggested fix:** Wrap `setState(...)` callers that are outside `_dispatch` with a try/catch or `ErrorBoundary.wrap` as a defensive measure.
 
 ---
 
