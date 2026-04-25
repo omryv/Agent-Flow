@@ -365,7 +365,7 @@ function createCf() {
 const ACTIONS = {
   closeModal, doImport, handleExport, openImportDialog, openNewRunDialog,
   createNewRun, openAddNodeDialog, addNode, openEditNodeDialog, saveEditNode,
-  openAddCfDialog, createCf, deleteActiveRun, deleteNode, resetLayout,
+  openAddCfDialog, createCf, deleteActiveRun, deleteNode,
   selectRun, selectNode, setTab, setCf, toggleCf, openCmdPalette,
   modalBackdrop(_id, _el, e) { if (e.target === _el) closeModal(); },
 };
@@ -389,12 +389,6 @@ function _delegatedChange(e) {
   if (e.target.dataset.role === 'import-file') _onImportFileChange(e);
 }
 
-function _delegatedMouseDown(e) {
-  const t = e.target.closest('[data-drag-handle]');
-  if (!t) return;
-  initDrag(e, t.dataset.dragId);
-}
-
 // ── Command palette ──────────────────────────────────────
 const CMDS = [
   { id: 'new-run',     label: 'New Run',                    keys: '⌘N',     run: () => openNewRunDialog() },
@@ -404,7 +398,6 @@ const CMDS = [
   { id: 'new-cf',      label: 'New Counterfactual',         keys: '⌘⇧C',    run: () => openAddCfDialog(),    when: () => !!state.activeRunId },
   { id: 'tab-graph',   label: 'View: Graph',                keys: 'G',      run: () => setTab('graph'),      when: () => !!state.activeRunId },
   { id: 'tab-cf',      label: 'View: Counterfactuals',      keys: 'C',      run: () => setTab('counterfactuals'), when: () => !!state.activeRunId },
-  { id: 'reset-layout',label: 'Reset Layout',               keys: '⌘⌥R',    run: () => resetLayout(),        when: () => !!state.activeRunId && state.activeTab === 'graph' },
   { id: 'clear-cf',    label: 'Clear Active Scenario',      keys: '⌘⌥0',    run: () => setCf(''),            when: () => !!state.activeCounterfactual },
   { id: 'delete-run',  label: 'Delete Active Run',          keys: '⌘⌫',     run: () => deleteActiveRun(),    when: () => !!state.activeRunId, danger: true },
   { id: 'delete-node', label: 'Delete Selected Node',       keys: 'Del',    run: () => deleteNode(state.selectedNodeId), when: () => !!state.selectedNodeId, danger: true },
@@ -567,9 +560,8 @@ function _onKey(e) {
     if (e.key === 'N' || e.key === 'n') { e.preventDefault(); openAddNodeDialog(); return; }
     if (e.key === 'C' || e.key === 'c') { e.preventDefault(); openAddCfDialog(); return; }
   }
-  // ⌘⌥R reset layout, ⌘⌥0 clear scenario
+  // ⌘⌥0 clear scenario
   if (mod && e.altKey) {
-    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); resetLayout(); return; }
     if (e.key === '0')                  { e.preventDefault(); setCf(''); return; }
   }
 
@@ -594,7 +586,6 @@ function installDelegation() {
   if (!app) return;
   app.addEventListener('click', _delegatedClick);
   app.addEventListener('change', _delegatedChange);
-  app.addEventListener('mousedown', _delegatedMouseDown);
   document.addEventListener('click', _delegatedClick);
   document.addEventListener('change', _delegatedChange);
   document.addEventListener('keydown', _onKey);

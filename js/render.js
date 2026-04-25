@@ -1,6 +1,22 @@
 /*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
 'use strict';
 
+const NODE_W = 220;
+const NODE_H = 100;
+
+function getPositionsForRun(runId, run) {
+  const stored = (state.nodePositions || {})[runId] || {};
+  const base   = layoutNodes(run.nodes, run.edges);
+  return Object.assign({}, base, stored);
+}
+
+function makeEdgePath(fp, tp) {
+  const x1 = fp.x + NODE_W, y1 = fp.y + NODE_H / 2;
+  const x2 = tp.x,          y2 = tp.y + NODE_H / 2;
+  const mx = (x1 + x2) / 2;
+  return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+}
+
 const _render = function render() {
   document.getElementById('app').innerHTML = buildHTML();
   attachEvents();
@@ -108,7 +124,6 @@ function buildCanvasArea(view) {
         ${isCounterfactual ? `<span id="cf-badge">${ICONS.cf} Counterfactual active</span>` : ''}
         <button class="btn" data-action="openAddNodeDialog" title="Add node">${ICONS.node} Add Node</button>
         <button class="btn" data-action="openAddCfDialog" title="New counterfactual">${ICONS.cf} New Scenario</button>
-        <button class="btn" data-action="resetLayout" title="Reset node positions">↺ Reset Layout</button>
         <button class="btn danger" data-action="deleteActiveRun" title="Delete run" aria-label="Delete run">${ICONS.delete}</button>
       ` : ''}
     </div>
@@ -132,10 +147,9 @@ function buildGraph(view) {
   const { run, overriddenNodeIds } = view;
   const positions = getPositionsForRun(state.activeRunId, run);
 
-  const nodeW = 220;
   let maxX = 0, maxY = 0;
   Object.values(positions).forEach(p => {
-    maxX = Math.max(maxX, p.x + nodeW);
+    maxX = Math.max(maxX, p.x + NODE_W);
     maxY = Math.max(maxY, p.y + 140);
   });
   const cw = maxX + 60, ch = Math.max(maxY + 60, 500);
@@ -152,7 +166,7 @@ function buildGraph(view) {
     <div class="node-wrapper" data-node-id="${esc(node.id)}" style="left:${pos.x}px;top:${pos.y}px;">
       <div class="node ${isSelected ? 'selected' : ''} ${isCfOverride ? 'cf-override' : ''}"
            data-action="selectNode" data-id="${esc(node.id)}" role="button" tabindex="0">
-        <div class="node-header" style="cursor:grab" data-drag-handle data-drag-id="${esc(node.id)}">
+        <div class="node-header">
           <div class="role-dot" style="background:${role.color}"></div>
           <span class="role-label" style="color:${role.color}">${esc(role.label)}</span>
         </div>
