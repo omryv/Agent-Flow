@@ -232,10 +232,35 @@ describe('SafeStore (via setState / localStorage)', () => {
     expect(view).toBeNull();
   });
 
-  test('oversized data is not saved and setState returns a valid state object', () => {
-    // Confirm normal saves return a valid state object.
-    const newState = ctx.setState({ activeTab: 'graph' });
-    expect(newState).toBeDefined();
-    expect(Array.isArray(newState.runs)).toBe(true);
+  test('oversized data is not saved and prior localStorage state is preserved', () => {
+    // Persist a small known run first.
+    const smallRun = {
+      id: 'r-small',
+      name: 'Small',
+      nodes: [{ id: 'n1', name: 'Node', content: 'x' }],
+      edges: [],
+      counterfactuals: [],
+    };
+    ctx.setState({ runs: [smallRun], activeRunId: 'r-small' });
+    const snapshot = ctx.localStorage._store['agentflow.v1'];
+
+    // Build a valid run large enough that its serialised state exceeds 4 MB.
+    // 500 nodes × 9 000 chars content ≈ 4.5 MB serialised, above the SafeStore cap.
+    const bigContent = 'x'.repeat(9000);
+    const hugeRun = {
+      id: 'r-huge',
+      name: 'Huge',
+      nodes: Array.from({ length: 500 }, (_, i) => ({
+        id: 'n' + i,
+        name: 'N' + i,
+        content: bigContent,
+      })),
+      edges: [],
+      counterfactuals: [],
+    };
+    ctx.setState({ runs: [hugeRun], activeRunId: 'r-huge' });
+
+    // SafeStore should have rejected the oversized payload; prior snapshot unchanged.
+    expect(ctx.localStorage._store['agentflow.v1']).toBe(snapshot);
   });
 });

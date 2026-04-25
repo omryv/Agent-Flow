@@ -31,6 +31,12 @@ function validateRunSchema(obj) {
     if (typeof e.from !== 'string' || !SAFE_ID_RE.test(e.from)) return `Edge ${i}: invalid "from".`;
     if (typeof e.to   !== 'string' || !SAFE_ID_RE.test(e.to))   return `Edge ${i}: invalid "to".`;
   }
+  const nodeIds = new Set(obj.nodes.map(n => n.id));
+  for (let i = 0; i < obj.edges.length; i++) {
+    const e = obj.edges[i];
+    if (!nodeIds.has(e.from)) return `Edge ${i}: "from" references unknown node "${e.from}".`;
+    if (!nodeIds.has(e.to))   return `Edge ${i}: "to" references unknown node "${e.to}".`;
+  }
   if (obj.counterfactuals !== undefined) {
     if (!Array.isArray(obj.counterfactuals)) return '"counterfactuals" must be an array.';
     for (let i = 0; i < obj.counterfactuals.length; i++) {
