@@ -19,18 +19,25 @@ function buildHTML() {
   `;
 }
 
-function buildHeader(view) {
+ffunction buildHeader(view) {
   const run = view ? view.run : null;
   return `
   <div id="header">
     <div class="logo">${ICONS.logo} AgentFlow <span class="tagline">counterfactual trace engine</span></div>
     <div class="spacer"></div>
-    ${run ? `<button class="btn" data-action="handleExport">${ICONS.export} Export</button>` : ''}
-    <button class="btn" data-action="openImportDialog">${ICONS.import} Import</button>
-    <button class="btn primary" data-action="openNewRunDialog">${ICONS.plus} New Run</button>
+    <button class="btn cmdk-trigger" data-action="openCmdPalette" title="Command palette (⌘K)" aria-label="Command palette">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M9.2 9.2L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="cmdk-trigger-label">Search</span>
+      <kbd class="cmdk-trigger-kbd">⌘K</kbd>
+    </button>
+    ${run ? `<button class="btn" data-action="handleExport" title="Export (⌘E)">${ICONS.export} Export</button>` : ''}
+    <button class="btn" data-action="openImportDialog" title="Import (⌘I)">${ICONS.import} Import</button>
+    <button class="btn primary" data-action="openNewRunDialog" title="New Run (⌘N)">${ICONS.plus} New Run</button>
   </div>`;
 }
-
 function buildSidebar() {
   const runs = state.runs;
   return `
