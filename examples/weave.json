@@ -1,0 +1,75 @@
+{
+  "id": "weave-call-abc",
+  "op_name": "weave:///op/MultiStepAgent:v1",
+  "display_name": "MultiStepAgent",
+  "inputs": {
+    "task": "Analyze sentiment of customer feedback"
+  },
+  "output": {
+    "sentiment": "positive",
+    "confidence": 0.87,
+    "reasoning": "Customer expresses satisfaction with product features and support.",
+    "usage": {
+      "total_tokens": 180
+    }
+  },
+  "exception": null,
+  "started_at": "2026-04-26T11:00:00Z",
+  "ended_at": "2026-04-26T11:00:03.200Z",
+  "children": [
+    {
+      "id": "weave-call-step1",
+      "op_name": "weave:///op/TextPreprocessor:v1",
+      "display_name": "TextPreprocessor",
+      "inputs": {
+        "text": "I love the new features! The support team was very helpful."
+      },
+      "output": {
+        "cleaned_text": "love new features support team helpful",
+        "tokens": ["love", "new", "features", "support", "team", "helpful"]
+      },
+      "exception": null,
+      "started_at": "2026-04-26T11:00:00.100Z",
+      "ended_at": "2026-04-26T11:00:00.350Z",
+      "children": []
+    },
+    {
+      "id": "weave-call-step2",
+      "op_name": "weave:///op/SentimentClassifier:v2",
+      "display_name": "SentimentClassifier",
+      "inputs": {
+        "tokens": ["love", "new", "features", "support", "team", "helpful"]
+      },
+      "output": {
+        "sentiment": "positive",
+        "score": 0.87,
+        "usage": {
+          "total_tokens": 140
+        }
+      },
+      "exception": null,
+      "started_at": "2026-04-26T11:00:00.400Z",
+      "ended_at": "2026-04-26T11:00:02.900Z",
+      "children": []
+    },
+    {
+      "id": "weave-call-step3",
+      "op_name": "weave:///op/ExplanationGenerator:v1",
+      "display_name": "ExplanationGenerator",
+      "inputs": {
+        "sentiment": "positive",
+        "original_text": "I love the new features! The support team was very helpful."
+      },
+      "output": {
+        "explanation": "Customer expresses satisfaction with product features and support.",
+        "usage": {
+          "total_tokens": 40
+        }
+      },
+      "exception": null,
+      "started_at": "2026-04-26T11:00:02.950Z",
+      "ended_at": "2026-04-26T11:00:03.180Z",
+      "children": []
+    }
+  ]
+}
