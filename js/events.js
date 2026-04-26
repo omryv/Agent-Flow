@@ -17,7 +17,7 @@ function closeModal() { if (_modalEl) { _modalEl.remove(); _modalEl = null; } }
 function modalOpen() { return !!_modalEl; }
 
 // ── Navigation ───────────────────────────────────────────
-function selectRun(id)  { setState({ activeRunId: id, selectedNodeId: null, activeCounterfactual: null, activeTab: 'graph' }); }
+function selectRun(id)  { setState({ activeRunId: id, selectedNodeId: null, activeCounterfactual: null }); }
 function selectNode(id) { setState({ selectedNodeId: state.selectedNodeId === id ? null : id }); }
 function setTab(tab)    { setState({ activeTab: tab }); }
 function setCf(id)      { setState({ activeCounterfactual: id || null, selectedNodeId: null }); }

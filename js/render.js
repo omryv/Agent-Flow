@@ -18,8 +18,25 @@ function makeEdgePath(fp, tp) {
 }
 
 const _render = function render() {
+  var scrollEl = document.getElementById('graph-scroll');
+  var savedLeft = scrollEl ? scrollEl.scrollLeft : 0;
+  var savedTop  = scrollEl ? scrollEl.scrollTop  : 0;
+  var prevFocusId = (document.activeElement && document.activeElement.dataset)
+    ? (document.activeElement.dataset.id || null)
+    : null;
+
   document.getElementById('app').innerHTML = buildHTML();
   attachEvents();
+
+  var newScroll = document.getElementById('graph-scroll');
+  if (newScroll) {
+    newScroll.scrollLeft = savedLeft;
+    newScroll.scrollTop  = savedTop;
+  }
+  if (prevFocusId) {
+    var el = document.querySelector('[data-id="' + prevFocusId + '"]');
+    if (el && typeof el.focus === 'function') el.focus({ preventScroll: true });
+  }
 };
 const render = ErrorBoundary.wrap(_render, 'render');
 
@@ -53,7 +70,7 @@ function buildSidebar() {
       <h2>Runs</h2>
       <span style="font-size:11px;color:var(--text-3)">${runs.length} trace${runs.length !== 1 ? 's' : ''}</span>
     </div>
-    <div id="runs-list">
+    <div id="runs-list" role="listbox">
       ${runs.length === 0 ? `<div class="no-runs-msg">No runs yet.<br>Import one.</div>` : ''}
       ${runs.map(r => buildRunItem(r)).join('')}
     </div>
@@ -66,7 +83,7 @@ function buildRunItem(r) {
   const timeStr = isNaN(t) ? '' : t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const failed = r.metrics?.failed || 0;
   return `
-  <div class="run-item ${active ? 'active' : ''}" data-action="selectRun" data-id="${esc(r.id)}" role="button" tabindex="0">
+  <div class="run-item ${active ? 'active' : ''}" data-action="selectRun" data-id="${escAttr(r.id)}" role="option" aria-selected="${active}" tabindex="${active ? '0' : '-1'}">
     <div class="run-meta">
       <div class="run-name">${esc(r.name)}</div>
       <div class="run-sub">${esc(timeStr)} · ${r.nodes.length} nodes</div>
@@ -96,8 +113,8 @@ function buildCanvasArea(view) {
     <div id="toolbar">
       <span class="section-label">View</span>
       <div class="tab-bar">
-        <div class="tab ${state.activeTab === 'graph' ? 'active' : ''}" data-action="setTab" data-id="graph" role="tab">Graph</div>
-        <div class="tab ${state.activeTab === 'counterfactuals' ? 'active' : ''}" data-action="setTab" data-id="counterfactuals" role="tab">
+        <div class="tab ${state.activeTab === 'graph' ? 'active' : ''}" data-action="setTab" data-id="graph" role="tab" aria-selected="${state.activeTab === 'graph'}">Graph</div>
+        <div class="tab ${state.activeTab === 'counterfactuals' ? 'active' : ''}" data-action="setTab" data-id="counterfactuals" role="tab" aria-selected="${state.activeTab === 'counterfactuals'}">
           Counterfactuals <span style="font-size:10px;color:var(--text-3);margin-left:3px">${realCfList.length}</span>
         </div>
       </div>
@@ -151,9 +168,9 @@ function buildGraph(view) {
     const isCfOverride = overriddenNodeIds.has(node.id);
 
     return `
-    <div class="node-wrapper" data-node-id="${esc(node.id)}" style="left:${pos.x}px;top:${pos.y}px;">
+    <div class="node-wrapper" data-node-id="${escAttr(node.id)}" style="left:${pos.x}px;top:${pos.y}px;">
       <div class="node ${isSelected ? 'selected' : ''} ${isCfOverride ? 'cf-override' : ''}"
-           data-action="selectNode" data-id="${esc(node.id)}" role="button" tabindex="0">
+           data-action="selectNode" data-id="${escAttr(node.id)}" role="button" tabindex="0" aria-pressed="${isSelected}">
         <div class="node-header">
           <div class="role-dot" style="background:${role.color}"></div>
           <span class="role-label" style="color:${role.color}">${esc(role.label)}</span>
@@ -173,7 +190,7 @@ function buildGraph(view) {
     const from = positions[e.from], to = positions[e.to];
     if (!from || !to) return '';
     const isCf = overriddenNodeIds.has(e.from) || overriddenNodeIds.has(e.to);
-    return `<path class="edge ${isCf ? 'cf' : ''}" data-edge-id="${esc(e.from + '__' + e.to)}" d="${esc(makeEdgePath(from, to))}"/>`;
+    return `<path class="edge ${isCf ? 'cf' : ''}" data-edge-id="${escAttr(e.from + '__' + e.to)}" d="${esc(makeEdgePath(from, to))}"/>`;
   }).join('');
 
   return `
@@ -201,7 +218,7 @@ function buildCfTab(view) {
     ${cfs.map(cf => {
       const active = state.activeCounterfactual === cf.id;
       return `
-      <div class="cf-card ${active ? 'active' : ''}" data-action="toggleCf" data-id="${esc(cf.id)}" role="button" tabindex="0">
+      <div class="cf-card ${active ? 'active' : ''}" data-action="toggleCf" data-id="${escAttr(cf.id)}" role="button" tabindex="0">
         <div class="cf-card-title">
           ${ICONS.cf}
           ${esc(cf.name)}
