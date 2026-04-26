@@ -38,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Preserve graph scroll position and keyboard focus across state-driven re-renders
+- Active tab (`graph` / `counterfactuals`) is now preserved when switching between runs
+- Run list items use `role="option"` with `aria-selected`; tab bar items use `aria-selected`; graph nodes use `aria-pressed` to expose selection state to assistive technologies
+- `escAttr()` is now used consistently for all HTML attribute value contexts in `render.js` (previously `esc()` was used in some attribute positions; IDs are unchanged since they satisfy `SAFE_ID_RE`)
+
 ### Planned
 - Command palette for advanced navigation
 - Node search and filtering
