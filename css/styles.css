@@ -605,3 +605,12 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   #header, #sidebar, #toolbar, #detail, #metrics-bar, .modal-backdrop, .modal { background: var(--bg-2); }
 }
+
+/* Header logo image — sized to match previous SVG glyph dimensions */
+.logo-img {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 4px;
+}
