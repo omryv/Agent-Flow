@@ -77,6 +77,7 @@ function _materializeCounterfactualRun(run, cf) {
       failed:     cf.metrics?.failed     ?? run.metrics?.failed     ?? 0,
     },
     finalAnswer: typeof cf.finalAnswer === 'string' ? cf.finalAnswer : run.finalAnswer,
+    counterfactuals: Array.isArray(run.counterfactuals) ? run.counterfactuals.map(_cloneCounterfactual) : [],
   });
 }
 

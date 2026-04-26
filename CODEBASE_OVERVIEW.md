@@ -1,6 +1,6 @@
 # AgentFlow — Codebase Overview, Test Documentation & Verification Report
 
-> Generated 2026-04-25. All 239 tests verified passing (`npm test`).
+> Generated 2026-04-25. All 251 tests verified passing (`npm test`).
 
 ---
 
@@ -48,11 +48,11 @@ Agent-Flow/
 ├── tests/
 │   ├── helpers/
 │   │   └── loadContext.js       # vm sandbox factory — mocks browser globals for Node tests
-│   ├── adapters.test.js         # 103 tests: adapter helpers + all 3 import formats
-│   ├── data-validation.test.js  # 35 tests: validateRunSchema()
+│   ├── adapters.test.js         # 98 tests: adapter helpers + all 3 import formats
+│   ├── data-validation.test.js  # 52 tests: validateRunSchema()
 │   ├── layout.test.js           # 14 tests: layoutNodes()
-│   ├── state.test.js            # 53 tests: state management & counterfactual materialisation
-│   └── utils.test.js            # 34 tests: esc(), escAttr(), clampStr(), SafeStore
+│   ├── state.test.js            # 48 tests: state management & counterfactual materialisation
+│   └── utils.test.js            # 39 tests: esc(), escAttr(), clampStr(), SafeStore
 ├── package.json             # Jest 29 dev dependency; test script
 ├── vercel.json              # Security headers, asset caching, SPA rewrites
 └── README.md                # Project overview and roadmap
@@ -107,11 +107,11 @@ A *run* can carry a `counterfactuals[]` array. Each counterfactual specifies `no
 
 Tests run via `npm test` (Jest 29, `testEnvironment: node`). All source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks `localStorage`, `document`, `window`, `location`, `URL`, and `CSS`.
 
-**Overall result: 239 tests — 239 passed, 0 failed, 0 skipped.**
+**Overall result: 251 tests — 251 passed, 0 failed, 0 skipped.**
 
 ---
 
-### 5.1 `tests/utils.test.js` — 34 tests
+### 5.1 `tests/utils.test.js` — 39 tests
 
 Tests pure utility functions in `js/utils.js`.
 
@@ -180,11 +180,11 @@ Exercises the `SafeStore` IIFE (load/save/clear against mocked `localStorage`).
 | setState persists to localStorage under `agentflow.v1` | state saved as JSON string | `JSON.parse` round-trip, checks `.runs` and `.activeRunId` | parsed object with `runs` array |
 | state loaded from localStorage on init | pre-seeded localStorage is read on context creation | creates second context with same store; checks `getActiveRunView()` returns non-null | view object with a run |
 | corrupted localStorage falls back to empty state | invalid JSON (`{ invalid json !!!`) does not crash | `getActiveRunView()` returns `null` (no runs) | `null` |
-| oversized data is not saved | normal save returns valid state object | `setState` return value is an object with a `runs` array | normalised state object |
+| oversized data is not saved and prior localStorage state is preserved | 500-node run (~4.5 MB serialised) exceeds the 4 MB cap; `save()` returns false and localStorage is not overwritten | prior snapshot unchanged after the oversized `setState` call | localStorage value unchanged |
 
 ---
 
-### 5.2 `tests/data-validation.test.js` — 35 tests
+### 5.2 `tests/data-validation.test.js` — 52 tests
 
 Tests the full `validateRunSchema()` validator in `js/data.js`.
 
@@ -245,6 +245,25 @@ Each test passes an invalid root-level object and expects a specific error strin
 | invalid `to` id | `to: 'bad!to'` | `'Edge 0: invalid "to"'` |
 | non-string `from` | `from: 123` | `'Edge 0: invalid "from"'` |
 
+#### `validateRunSchema()` — dangling edge detection, 12 tests
+
+Verifies that edges whose `from` or `to` field references a node id not present in the run's `nodes` array are rejected.
+
+| Test | What It Checks | Expected Result |
+|---|---|---|
+| accepts edge connecting two existing nodes | valid edge between n1 and n2 | `null` |
+| rejects edge where from references non-existent node | `from: 'ghost'` — no node with that id | error matching `/ghost/` |
+| rejects edge where to references non-existent node | `to: 'phantom'` — no node with that id | error matching `/phantom/` |
+| rejects edge where both from and to are non-existent (from reported first) | both endpoints missing | error matching `/missing-from/` |
+| error message includes the edge index for a dangling from | second edge (index 1) is dangling | error matching `/Edge 1/` |
+| error message includes the edge index for a dangling to | second edge (index 1) is dangling | error matching `/Edge 1/` |
+| reports first dangling edge, not subsequent ones | edge 0 and edge 1 both dangling | error matches `/Edge 0/` and not `/Edge 1/` |
+| accepts self-loop edge when referenced node exists | `from: 'n1', to: 'n1'`, n1 exists | `null` |
+| rejects self-loop edge when referenced node does not exist | `from: 'nx', to: 'nx'`, nx absent | error matching `/nx/` |
+| format validation error reported before dangling check | `from: 'bad id!'` — fails SAFE_ID_RE | error matching `/invalid "from"/` |
+| accepts multiple edges all connecting known nodes | three-node run with three valid edges | `null` |
+| rejects dangling to even when from is valid | `from: 'n1'` exists, `to: 'does-not-exist'` absent | error matching `/does-not-exist/` |
+
 #### `validateRunSchema()` — counterfactual errors, 5 tests
 
 | Test | Input | Expected Error |
@@ -284,7 +303,7 @@ Tests `layoutNodes(nodes, edges)` in `js/layout.js`.
 
 ---
 
-### 5.4 `tests/state.test.js` — 53 tests
+### 5.4 `tests/state.test.js` — 48 tests
 
 Tests all state management logic in `js/state.js`.
 
@@ -378,7 +397,7 @@ Tests all state management logic in `js/state.js`.
 
 ---
 
-### 5.5 `tests/adapters.test.js` — 103 tests
+### 5.5 `tests/adapters.test.js` — 98 tests
 
 Tests adapter helpers and all three trace import paths in `js/adapters.js`.
 

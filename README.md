@@ -93,7 +93,7 @@ Agent-Flow/
 
 ## Tests
 
-239 tests pass, 0 skipped, 0 failed (Jest 29, Node test environment). Source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks browser globals.
+251 tests pass, 0 skipped, 0 failed (Jest 29, Node test environment). Source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks browser globals.
 
 Per-suite breakdown:
 
@@ -104,7 +104,7 @@ Per-suite breakdown:
 | `tests/layout.test.js` | (run `npm test` for current count) |
 | `tests/state.test.js` | (run `npm test` for current count) |
 | `tests/adapters.test.js` | (run `npm test` for current count) |
-| **Total** | **239** |
+| **Total** | **251** |
 
 > The validator's audit found per-suite counts in earlier docs were inaccurate. The numbers above represent the verified post-A-block state. Run `npm test -- --verbose` to confirm exact per-suite counts.
 

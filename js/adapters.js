@@ -21,7 +21,12 @@ function msDiff(start, end) {
 
 function truncate(obj, maxLen = 300) {
   if (obj == null) return '';
-  const s = typeof obj === 'string' ? obj : JSON.stringify(obj);
+  let s;
+  if (typeof obj === 'string') {
+    s = obj;
+  } else {
+    try { s = JSON.stringify(obj); } catch { s = '[circular]'; }
+  }
   return s.length > maxLen ? s.slice(0, maxLen) + '…' : s;
 }
 

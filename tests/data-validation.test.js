@@ -272,3 +272,118 @@ describe('validateRunSchema() — counterfactual errors', () => {
     expect(ctx.validateRunSchema(run)).toMatch(/CF 0: invalid "nodeOverrides"/);
   });
 });
+
+describe('validateRunSchema() — dangling edge detection', () => {
+  function twoNodeRun() {
+    return {
+      id: 'r1',
+      name: 'Two Nodes',
+      nodes: [
+        { id: 'n1', name: 'Alpha', content: '' },
+        { id: 'n2', name: 'Beta',  content: '' },
+      ],
+      edges: [],
+    };
+  }
+
+  test('accepts edge connecting two existing nodes', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'n1', to: 'n2' }];
+    expect(ctx.validateRunSchema(run)).toBeNull();
+  });
+
+  test('rejects edge where from references a non-existent node', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'ghost', to: 'n2' }];
+    expect(ctx.validateRunSchema(run)).toMatch(/Edge 0/);
+    expect(ctx.validateRunSchema(run)).toMatch(/ghost/);
+  });
+
+  test('rejects edge where to references a non-existent node', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'n1', to: 'phantom' }];
+    expect(ctx.validateRunSchema(run)).toMatch(/Edge 0/);
+    expect(ctx.validateRunSchema(run)).toMatch(/phantom/);
+  });
+
+  test('rejects edge where both from and to reference non-existent nodes (from reported first)', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'missing-from', to: 'missing-to' }];
+    const err = ctx.validateRunSchema(run);
+    expect(err).toMatch(/Edge 0/);
+    expect(err).toMatch(/missing-from/);
+  });
+
+  test('error message includes the edge index for a dangling from', () => {
+    const run = twoNodeRun();
+    run.edges = [
+      { from: 'n1', to: 'n2' },
+      { from: 'n1', to: 'nowhere' },
+    ];
+    expect(ctx.validateRunSchema(run)).toMatch(/Edge 1/);
+  });
+
+  test('error message includes the edge index for a dangling to', () => {
+    const run = twoNodeRun();
+    run.edges = [
+      { from: 'n1', to: 'n2' },
+      { from: 'gone', to: 'n2' },
+    ];
+    expect(ctx.validateRunSchema(run)).toMatch(/Edge 1/);
+  });
+
+  test('reports the first dangling edge, not subsequent ones', () => {
+    const run = twoNodeRun();
+    run.edges = [
+      { from: 'n1', to: 'bad1' },
+      { from: 'n1', to: 'bad2' },
+    ];
+    const err = ctx.validateRunSchema(run);
+    expect(err).toMatch(/Edge 0/);
+    expect(err).not.toMatch(/Edge 1/);
+  });
+
+  test('accepts self-loop edge when the referenced node exists', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'n1', to: 'n1' }];
+    expect(ctx.validateRunSchema(run)).toBeNull();
+  });
+
+  test('rejects self-loop edge when the referenced node does not exist', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'nx', to: 'nx' }];
+    expect(ctx.validateRunSchema(run)).toMatch(/nx/);
+  });
+
+  test('format validation error is reported before dangling check', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'bad id!', to: 'n2' }];
+    expect(ctx.validateRunSchema(run)).toMatch(/invalid "from"/);
+  });
+
+  test('accepts run with multiple edges all connecting known nodes', () => {
+    const run = {
+      id: 'r2',
+      name: 'Multi-edge',
+      nodes: [
+        { id: 'a', name: 'A', content: '' },
+        { id: 'b', name: 'B', content: '' },
+        { id: 'c', name: 'C', content: '' },
+      ],
+      edges: [
+        { from: 'a', to: 'b' },
+        { from: 'b', to: 'c' },
+        { from: 'a', to: 'c' },
+      ],
+    };
+    expect(ctx.validateRunSchema(run)).toBeNull();
+  });
+
+  test('rejects dangling to even when from is valid', () => {
+    const run = twoNodeRun();
+    run.edges = [{ from: 'n1', to: 'does-not-exist' }];
+    const err = ctx.validateRunSchema(run);
+    expect(err).toBeTruthy();
+    expect(err).toMatch(/does-not-exist/);
+  });
+});
