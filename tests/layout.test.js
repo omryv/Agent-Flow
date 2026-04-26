@@ -186,4 +186,14 @@ describe('layoutNodes()', () => {
       expect(typeof positions[n.id].y).toBe('number');
     });
   });
+
+  test('layout handles self-loop without crash and assigns coordinates', () => {
+    const positions = ctx.layoutNodes(
+      [{ id: 'n1' }],
+      [{ from: 'n1', to: 'n1' }]
+    );
+    expect(positions).toHaveProperty('n1');
+    expect(positions.n1.x).toBeGreaterThanOrEqual(0);
+    expect(positions.n1.y).toBeGreaterThanOrEqual(0);
+  });
 });

@@ -131,6 +131,8 @@ snapshots/private/
 # ── AgentFlow — allow sample fixtures to commit ───────
 !fixtures/samples/
 !fixtures/samples/**
+!examples/
+!examples/**
 
 # ── Archives / binaries ───────────────────────────────
 *.zip

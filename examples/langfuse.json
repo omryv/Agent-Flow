@@ -1,0 +1,47 @@
+{
+  "id": "trace-xyz789",
+  "name": "Customer Support Query",
+  "timestamp": "2026-04-26T10:15:00Z",
+  "input": "How do I reset my password?",
+  "observations": [
+    {
+      "id": "obs-1",
+      "type": "SPAN",
+      "name": "Intent Classification",
+      "input": "How do I reset my password?",
+      "output": "intent: password_reset, confidence: 0.95",
+      "startTime": "2026-04-26T10:15:00.050Z",
+      "endTime": "2026-04-26T10:15:00.180Z",
+      "parentObservationId": null,
+      "level": "DEFAULT"
+    },
+    {
+      "id": "obs-2",
+      "type": "GENERATION",
+      "name": "Knowledge Base Lookup",
+      "input": "intent: password_reset",
+      "output": "Found 2 relevant articles on password reset procedures.",
+      "startTime": "2026-04-26T10:15:00.200Z",
+      "endTime": "2026-04-26T10:15:00.450Z",
+      "parentObservationId": "obs-1",
+      "level": "DEFAULT",
+      "usage": {
+        "totalTokens": 45
+      }
+    },
+    {
+      "id": "obs-3",
+      "type": "GENERATION",
+      "name": "Response Generation",
+      "input": "Generate password reset instructions",
+      "output": "To reset your password, please visit the account settings page and click 'Forgot Password'. You will receive a reset link via email.",
+      "startTime": "2026-04-26T10:15:00.500Z",
+      "endTime": "2026-04-26T10:15:01.750Z",
+      "parentObservationId": "obs-2",
+      "level": "DEFAULT",
+      "usage": {
+        "totalTokens": 120
+      }
+    }
+  ]
+}
