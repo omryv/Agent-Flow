@@ -52,7 +52,7 @@ Agent-Flow/
 │   ├── data-validation.test.js  # 52 tests: validateRunSchema()
 │   ├── layout.test.js           # 14 tests: layoutNodes()
 │   ├── state.test.js            # 48 tests: state management & counterfactual materialisation
-│   └── utils.test.js            # 39 tests: esc(), escAttr(), clampStr(), SafeStore
+│   └── utils.test.js            # 40 tests: esc(), escAttr(), clampStr(), SafeStore
 ├── package.json             # Jest 29 dev dependency; test script
 ├── vercel.json              # Security headers, asset caching, SPA rewrites
 └── README.md                # Project overview and roadmap
@@ -76,7 +76,7 @@ A single mutable `state` object lives in `state.js`. Every user action calls `se
 
 1. Merge patch with current state.
 2. Pass through `_normalizeState()` — validates runs, sanitises fields, falls back to sample data if invalid.
-3. Persist to `localStorage` via `SafeStore`.
+3. Serialise to JSON via `SafeStore`; if the result exceeds 4 MB the save is discarded and the prior `localStorage` value is preserved.
 4. Call `render()` (full DOM rebuild).
 
 ### 4.2 Counterfactual System
@@ -107,11 +107,11 @@ A *run* can carry a `counterfactuals[]` array. Each counterfactual specifies `no
 
 Tests run via `npm test` (Jest 29, `testEnvironment: node`). All source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks `localStorage`, `document`, `window`, `location`, `URL`, and `CSS`.
 
-**Overall result: 251 tests — 251 passed, 0 failed, 0 skipped.**
+**Overall result: 255 tests — 255 passed, 0 failed, 0 skipped.**
 
 ---
 
-### 5.1 `tests/utils.test.js` — 39 tests
+### 5.1 `tests/utils.test.js` — 40 tests
 
 Tests pure utility functions in `js/utils.js`.
 
@@ -171,7 +171,7 @@ String-length enforcer used before storing user-supplied names/labels.
 | coerces number to string before clamping | `12345` with max 3 | `toBe('123')` | `'123'` |
 | handles unicode characters | `'abcdef'` with max 4 | `toBe('abcd')` | `'abcd'` |
 
-#### `SafeStore` (via `setState` / `localStorage`) — 4 tests
+#### `SafeStore` (via `setState` / `localStorage`) — 5 tests
 
 Exercises the `SafeStore` IIFE (load/save/clear against mocked `localStorage`).
 
@@ -181,6 +181,7 @@ Exercises the `SafeStore` IIFE (load/save/clear against mocked `localStorage`).
 | state loaded from localStorage on init | pre-seeded localStorage is read on context creation | creates second context with same store; checks `getActiveRunView()` returns non-null | view object with a run |
 | corrupted localStorage falls back to empty state | invalid JSON (`{ invalid json !!!`) does not crash | `getActiveRunView()` returns `null` (no runs) | `null` |
 | oversized data is not saved and prior localStorage state is preserved | 500-node run (~4.5 MB serialised) exceeds the 4 MB cap; `save()` returns false and localStorage is not overwritten | prior snapshot unchanged after the oversized `setState` call | localStorage value unchanged |
+| SafeStore.save returns false and preserves prior state for payload over 4 MB | single-node run with content exceeding 4 MB is rejected | prior snapshot unchanged after the oversized `setState` call | localStorage value unchanged |
 
 ---
 
@@ -303,7 +304,7 @@ Tests `layoutNodes(nodes, edges)` in `js/layout.js`.
 
 ---
 
-### 5.4 `tests/state.test.js` — 48 tests
+### 5.4 `tests/state.test.js` — 50 tests
 
 Tests all state management logic in `js/state.js`.
 
@@ -388,16 +389,23 @@ Tests all state management logic in `js/state.js`.
 | `_cloneNodePositions` clones nested positions | `{x:10,y:20}` not same ref | equal but independent |
 | `_cloneNodePositions` coerces bad values to 0 | `'bad'` and `null` → 0 | `{x:0,y:0}` |
 
-#### `overriddenNodeIds` edge cases — 2 tests
+#### `overriddenNodeIds` edge cases — 3 tests
 
 | Test | What It Checks | Final Output |
 |---|---|---|
 | node changed only in `durationMs` is detected | `durationMs: 999` vs original `undefined` | `has('n1') === true` |
 | node added only in CF is marked overridden | `n3` exists in CF but not base run | `has('n3') === true` |
+| removed base node is in overriddenNodeIds | `n2` absent from CF nodes | `has('n2') === true` |
+
+#### `_materializeCounterfactualRun()` — partial metrics fallback — 1 test
+
+| Test | What It Checks | Final Output |
+|---|---|---|
+| CF with partial metrics falls back to base run for missing fields | `totalMs: 500` overrides; `tokens: 50` falls back from base | `totalMs === 500`, `tokens === 50` |
 
 ---
 
-### 5.5 `tests/adapters.test.js` — 98 tests
+### 5.5 `tests/adapters.test.js` — 99 tests
 
 Tests adapter helpers and all three trace import paths in `js/adapters.js`.
 
@@ -433,7 +441,7 @@ Computes ISO timestamp difference in milliseconds.
 | end before start | reversed order | `undefined` |
 | large difference (5 years) | 2020→2025 | positive number |
 
-#### `truncate()` — 8 tests
+#### `truncate()` — 9 tests
 
 Truncates strings or JSON-stringified objects to a max length, appending `'…'`.
 
@@ -447,6 +455,7 @@ Truncates strings or JSON-stringified objects to a max length, appending `'…'`
 | uses default max 300 | 301-char string | 301 chars (300 + `'…'`) |
 | JSON-stringifies objects | `{key:'value'}` | `'{"key":"value"}'` |
 | truncates stringified object | large object, max 10 | 10-char prefix + `'…'` |
+| does not throw on circular reference | `obj.self = obj` | string (no throw) |
 
 #### `inferRole()` — 26 tests
 

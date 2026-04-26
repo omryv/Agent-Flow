@@ -133,6 +133,12 @@ describe('truncate()', () => {
     const result = ctx.truncate(obj, 10);
     expect(result).toBe(json.slice(0, 10) + '…');
   });
+
+  test('truncate does not throw on circular reference', () => {
+    const obj = {}; obj.self = obj;
+    expect(() => ctx.truncate(obj)).not.toThrow();
+    expect(typeof ctx.truncate(obj)).toBe('string');
+  });
 });
 
 // ── inferRole() ───────────────────────────────────────────────────────────────

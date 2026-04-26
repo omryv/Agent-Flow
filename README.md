@@ -57,7 +57,7 @@ All identifiers in imported runs and counterfactuals are validated against `SAFE
 
 Schema length caps in `validateRunSchema`: name ≤ 200, content ≤ 10 000, nodes ≤ 500, edges ≤ 2 000.
 
-`SafeStore` enforces a 4 MB cap on serialized state before writing to `localStorage`.
+`SafeStore` serializes to JSON, then discards the result if it exceeds 4 MB; the prior `localStorage` value is preserved.
 
 ---
 ```
@@ -93,18 +93,18 @@ Agent-Flow/
 
 ## Tests
 
-251 tests pass, 0 skipped, 0 failed (Jest 29, Node test environment). Source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks browser globals.
+255 tests pass, 0 skipped, 0 failed (Jest 29, Node test environment). Source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks browser globals.
 
 Per-suite breakdown:
 
 | Suite | Tests |
 |---|---|
-| `tests/utils.test.js` | (run `npm test` for current count) |
-| `tests/data-validation.test.js` | 35 |
-| `tests/layout.test.js` | (run `npm test` for current count) |
-| `tests/state.test.js` | (run `npm test` for current count) |
-| `tests/adapters.test.js` | (run `npm test` for current count) |
-| **Total** | **251** |
+| `tests/utils.test.js` | 40 |
+| `tests/data-validation.test.js` | 52 |
+| `tests/layout.test.js` | 14 |
+| `tests/state.test.js` | 50 |
+| `tests/adapters.test.js` | 99 |
+| **Total** | **255** |
 
 > The validator's audit found per-suite counts in earlier docs were inaccurate. The numbers above represent the verified post-A-block state. Run `npm test -- --verbose` to confirm exact per-suite counts.
 
@@ -135,14 +135,14 @@ npm test
 
 Push to GitHub. Point Vercel at the repo with framework preset set to "Other" and every build field left blank. The included `vercel.json` handles security headers, cache control, and SPA rewrites.
 
-> The current cache headers and CSP are subject to a known reconciliation pass before v1.0 tag. See `docs/release-validation-2026-04-25.md` for details.
+> See `docs/release-validation-2025-04-25.md` for details.
 
 ---
 
 
 ## Status
 
-Pre-1.0. Not yet tagged. Outstanding work tracked in `docs/release-validation-2026-04-25.md`.
+Pre-1.0. Not yet tagged. Outstanding work tracked in `docs/release-validation-2025-04-25.md`.
 
 ---
 
