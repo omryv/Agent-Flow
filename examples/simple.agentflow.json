@@ -1,0 +1,77 @@
+{
+  "id": "run-simple-rag",
+  "name": "Simple RAG Query",
+  "createdAt": "2026-04-26T09:00:00Z",
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "User Query",
+      "content": "What are the key features of AgentFlow?",
+      "role": "input",
+      "status": "success",
+      "durationMs": 0
+    },
+    {
+      "id": "n2",
+      "name": "Retrieve Documentation",
+      "content": "Retrieved 3 relevant documents from the knowledge base.",
+      "role": "retrieve",
+      "status": "success",
+      "durationMs": 120
+    },
+    {
+      "id": "n3",
+      "name": "Generate Answer",
+      "content": "AgentFlow is a read-only counterfactual inspector for LLM agent execution traces. It supports importing traces from LangSmith, LangFuse, and W&B Weave, and renders them as interactive DAGs with counterfactual scenario support.",
+      "role": "synthesize",
+      "status": "success",
+      "durationMs": 850
+    },
+    {
+      "id": "n4",
+      "name": "Format Response",
+      "content": "AgentFlow is a read-only counterfactual inspector for LLM agent execution traces. It supports importing traces from LangSmith, LangFuse, and W&B Weave, and renders them as interactive DAGs with counterfactual scenario support.",
+      "role": "output",
+      "status": "success",
+      "durationMs": 15
+    }
+  ],
+  "edges": [
+    { "from": "n1", "to": "n2" },
+    { "from": "n2", "to": "n3" },
+    { "from": "n3", "to": "n4" }
+  ],
+  "metrics": {
+    "totalMs": 985,
+    "tokens": 245,
+    "nodes": 4,
+    "successful": 4,
+    "failed": 0
+  },
+  "finalAnswer": "AgentFlow is a read-only counterfactual inspector for LLM agent execution traces. It supports importing traces from LangSmith, LangFuse, and W&B Weave, and renders them as interactive DAGs with counterfactual scenario support.",
+  "counterfactuals": [
+    {
+      "id": "cf-no-retrieval",
+      "name": "Skip Retrieval Step",
+      "description": "What if we answered from LLM knowledge only, without retrieval?",
+      "nodeOverrides": {
+        "n2": {
+          "status": "skipped",
+          "content": "Retrieval skipped."
+        },
+        "n3": {
+          "content": "AgentFlow is a tool for visualizing agent execution traces. (Note: Answer may be less accurate without retrieval context.)",
+          "durationMs": 720
+        },
+        "n4": {
+          "content": "AgentFlow is a tool for visualizing agent execution traces. (Note: Answer may be less accurate without retrieval context.)"
+        }
+      },
+      "metrics": {
+        "totalMs": 735,
+        "tokens": 180
+      },
+      "finalAnswer": "AgentFlow is a tool for visualizing agent execution traces. (Note: Answer may be less accurate without retrieval context.)"
+    }
+  ]
+}
