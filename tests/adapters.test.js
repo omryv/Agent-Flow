@@ -318,6 +318,11 @@ describe('detectFormat()', () => {
     // run_type is checked first in the implementation
     expect(ctx.detectFormat({ run_type: 'chain', observations: [] })).toBe('langsmith');
   });
+
+  test('LangSmith takes priority over Weave when both keys present', () => {
+    // run_type is checked before op_name in the implementation
+    expect(ctx.detectFormat({ run_type: 'chain', op_name: 'weave:///op/foo:1' })).toBe('langsmith');
+  });
 });
 
 // ── importFromThirdParty() — LangSmith ───────────────────────────────────────
