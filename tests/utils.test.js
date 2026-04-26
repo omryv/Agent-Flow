@@ -263,4 +263,37 @@ describe('SafeStore (via setState / localStorage)', () => {
     // SafeStore should have rejected the oversized payload; prior snapshot unchanged.
     expect(ctx.localStorage._store['agentflow.v1']).toBe(snapshot);
   });
+
+  test('SafeStore.save returns false and preserves prior state for payload over 4 MB', () => {
+    // 1. Save a valid small run first.
+    const smallRun = {
+      id: 'r-prior',
+      name: 'Prior',
+      nodes: [{ id: 'n1', name: 'Node', content: 'y' }],
+      edges: [],
+      counterfactuals: [],
+    };
+    ctx.setState({ runs: [smallRun], activeRunId: 'r-prior' });
+    const snapshot = ctx.localStorage._store['agentflow.v1'];
+
+    // 2. Attempt to save a run whose serialized form exceeds 4 MB.
+    // 500 nodes × 9 000-char content ≈ 4.5 MB serialized; each node passes the
+    // 10 000-char schema cap, so _normalizeState accepts it but SafeStore rejects.
+    const bigContent = 'x'.repeat(9000);
+    const overRun = {
+      id: 'r-over',
+      name: 'Over',
+      nodes: Array.from({ length: 500 }, (_, i) => ({
+        id: 'n' + i,
+        name: 'N' + i,
+        content: bigContent,
+      })),
+      edges: [],
+      counterfactuals: [],
+    };
+    ctx.setState({ runs: [overRun], activeRunId: 'r-over' });
+
+    // 3 & 4. SafeStore rejected the oversized payload; prior state is preserved.
+    expect(ctx.localStorage._store['agentflow.v1']).toBe(snapshot);
+  });
 });

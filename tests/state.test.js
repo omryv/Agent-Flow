@@ -433,4 +433,41 @@ describe('overriddenNodeIds — detection via _buildRunView', () => {
     const view = ctx.getActiveRunView();
     expect(view.overriddenNodeIds.has('n3')).toBe(true);
   });
+
+  test('removed base node is in overriddenNodeIds', () => {
+    // base run has n1 + n2; CF only has n1 in cf.nodes (n2 is absent)
+    const run = makeRun({
+      counterfactuals: [{
+        id: 'cf-remove',
+        name: 'Remove Node',
+        nodeOverrides: {},
+        nodes: [
+          { id: 'n1', name: 'Input', content: 'q', role: 'input', status: 'success' },
+        ],
+      }],
+    });
+    ctx.setState({ runs: [run], activeRunId: run.id, activeCounterfactual: 'cf-remove' });
+    const view = ctx.getActiveRunView();
+    expect(view.overriddenNodeIds.has('n2')).toBe(true);
+  });
+});
+
+// ── CF partial-metrics fallback ───────────────────────────────────────────────
+
+describe('_materializeCounterfactualRun() — partial metrics fallback', () => {
+  test('CF with partial metrics falls back to base run for missing fields', () => {
+    const run = makeRun({
+      metrics: { totalMs: 100, tokens: 50, nodes: 2, successful: 2, failed: 0 },
+      counterfactuals: [{
+        id: 'cf-partial',
+        name: 'Partial Metrics',
+        nodeOverrides: {},
+        metrics: { totalMs: 500 },
+      }],
+    });
+    ctx.setState({ runs: [run], activeRunId: run.id, activeCounterfactual: 'cf-partial' });
+    const view = ctx.getActiveRunView();
+    expect(view.run.metrics.totalMs).toBe(500);
+    expect(view.run.metrics.tokens).toBe(50);
+  });
 });
