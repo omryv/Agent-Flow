@@ -158,7 +158,6 @@ temp/
 *.rej
 
 # ── Lockfiles (solo MVP — keep repo clean) ────────────
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 bun.lockb
