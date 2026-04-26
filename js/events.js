@@ -188,9 +188,10 @@ function _onKey(e) {
 
 function installDelegation() {
   const app = document.getElementById('app');
-  if (!app) return;
-  app.addEventListener('click', _delegatedClick);
-  app.addEventListener('change', _delegatedChange);
+  if (app) {
+    app.addEventListener('click', _delegatedClick);
+    app.addEventListener('change', _delegatedChange);
+  }
   document.addEventListener('click', _delegatedClick);
   document.addEventListener('change', _delegatedChange);
   document.addEventListener('keydown', _onKey);
