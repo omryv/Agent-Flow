@@ -107,7 +107,7 @@ A *run* can carry a `counterfactuals[]` array. Each counterfactual specifies `no
 
 Tests run via `npm test` (Jest 29, `testEnvironment: node`). All source files except DOM-dependent ones (`render.js`, `events.js`, `main.js`) are loaded into a `vm.createContext` sandbox that mocks `localStorage`, `document`, `window`, `location`, `URL`, and `CSS`.
 
-**Overall result: 255 tests — 255 passed, 0 failed, 0 skipped.**
+**Overall result: 260 tests — 260 passed, 0 failed, 0 skipped.**
 
 ---
 
@@ -405,7 +405,7 @@ Tests all state management logic in `js/state.js`.
 
 ---
 
-### 5.5 `tests/adapters.test.js` — 99 tests
+### 5.5 `tests/adapters.test.js` — 103 tests
 
 Tests adapter helpers and all three trace import paths in `js/adapters.js`.
 
