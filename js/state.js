@@ -166,6 +166,7 @@ function _normalizeState(raw) {
     activeTab: source.activeTab === 'counterfactuals' ? 'counterfactuals' : 'graph',
     activeCounterfactual,
     nodePositions: _cloneNodePositions(source.nodePositions),
+    searchQuery: typeof source.searchQuery === 'string' ? source.searchQuery : '',
   };
 }
 
@@ -175,7 +176,7 @@ function _loadInitialState() {
 
 function setState(patch) {
   state = _normalizeState(Object.assign({}, state, patch || {}));
-  SafeStore.save(state);
+  SafeStore.save(Object.assign({}, state, { searchQuery: '' }));
   if (typeof render === 'function') render();
   return state;
 }
