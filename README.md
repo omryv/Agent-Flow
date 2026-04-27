@@ -373,7 +373,7 @@ Agent-Flow/
 ├── tests/
 │   ├── helpers/
 │   │   └── loadContext.js        # vm sandbox factory — mocks browser globals for Node tests
-│   ├── adapters.test.js          # 99 tests
+│   ├── adapters.test.js          # 103 tests
 │   ├── data-validation.test.js   # 52 tests
 │   ├── layout.test.js            # 14 tests
 │   ├── state.test.js             # 50 tests
@@ -463,7 +463,7 @@ Open `http://localhost:8000`.
 
 ```bash
 npm install   # installs Jest 29
-npm test      # runs all 255 tests
+npm test      # runs all 260 tests
 npm test -- --verbose   # per-test output
 ```
 
@@ -477,8 +477,8 @@ Tests run in a Node.js `vm.createContext` sandbox that mocks `document`, `window
 | `tests/data-validation.test.js` | 52 | `validateRunSchema()` — happy path, root errors, node errors, edge errors, dangling-edge detection, CF errors |
 | `tests/layout.test.js` | 14 | `layoutNodes()` — single node, linear chain, fan-out, fan-in, diamond, cycle, disconnected components, self-loop |
 | `tests/state.test.js` | 50 | `setState`, `getActiveRunView`, `_normalizeState`, `_materializeCounterfactualRun`, `_buildRunView` (CF overrides, removed-node detection, partial-metrics fallback), clone helpers |
-| `tests/adapters.test.js` | 99 | `safeId`, `msDiff`, `truncate` (including circular refs), `inferRole`, `inferStatus`, `detectFormat`, LangSmith/LangFuse/Weave adapters, error cases |
-| **Total** | **255** | |
+| `tests/adapters.test.js` | 103 | `safeId`, `msDiff`, `truncate` (including circular refs), `inferRole`, `inferStatus`, `detectFormat`, LangSmith/LangFuse/Weave adapters, error cases |
+| **Total** | **260** | |
 
 ---
 

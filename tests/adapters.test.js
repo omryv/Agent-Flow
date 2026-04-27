@@ -89,6 +89,10 @@ describe('msDiff()', () => {
     expect(typeof diff).toBe('number');
     expect(diff).toBeGreaterThan(0);
   });
+
+  test('handles ISO strings with timezone offsets correctly', () => {
+    expect(ctx.msDiff('2024-01-01T00:00:00+05:30', '2024-01-01T00:00:01+05:30')).toBe(1000);
+  });
 });
 
 // ── truncate() ────────────────────────────────────────────────────────────────
@@ -247,6 +251,17 @@ describe('inferRole()', () => {
   test('is case-insensitive for both type and name', () => {
     expect(ctx.inferRole('LLM', '')).toBe('synthesize');
     expect(ctx.inferRole('', 'VECTOR SEARCH')).toBe('retrieve');
+  });
+
+  test('name-based role takes precedence over type when they conflict (name=search, type=plan)', () => {
+    // name contains 'search' → retrieve; type 'plan' would give 'plan'
+    // documents that name is checked before type in the priority order
+    expect(ctx.inferRole('plan', 'search the web')).toBe('retrieve');
+  });
+
+  test('name-based role takes precedence over type when they conflict (name=generate, type=tool)', () => {
+    // name contains 'generat' → synthesize; type 'tool' would give 'tool'
+    expect(ctx.inferRole('tool', 'text generation step')).toBe('synthesize');
   });
 });
 
