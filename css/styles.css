@@ -614,3 +614,85 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
   margin-right: 6px;
   border-radius: 4px;
 }
+
+/* ── Import toast ──────────────────────────────────── */
+.import-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(30,34,52,.97), rgba(22,26,40,.97));
+  border: 1px solid var(--hair-2);
+  border-radius: var(--r-sm);
+  padding: 10px 18px;
+  font-size: 12px; color: var(--text-2);
+  box-shadow: var(--sh-3);
+  z-index: 200;
+  animation: fadeIn 180ms var(--ease-out);
+  pointer-events: none;
+}
+
+/* ── Search box ────────────────────────────────────── */
+.search-box { position: relative; }
+.search-box input[type="search"] {
+  background: rgba(0,0,0,.25);
+  border: 1px solid var(--hair-2);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  padding: 4px 10px 4px 28px;
+  font-size: 12px; width: 180px;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease),
+              width var(--t-med) var(--ease);
+}
+.search-box input[type="search"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  width: 240px;
+  outline: none;
+}
+.search-box input[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
+.search-box::before {
+  content: '';
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  width: 12px; height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235b6585' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-size: contain;
+  pointer-events: none;
+}
+
+.edge-dimmed { opacity: 0.08 !important; }
+
+/* ── CF diff summary ───────────────────────────────── */
+.cf-diff-summary {
+  margin: 12px 0 8px;
+  background: rgba(0,0,0,.2);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+}
+.cf-diff-title {
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 10px;
+}
+.cf-diff-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 8px; font-size: 11.5px;
+}
+.cf-diff-row:last-child { margin-bottom: 0; }
+.cf-diff-name { color: var(--text); font-weight: 500; flex-shrink: 0; }
+.cf-diff-arrow { color: var(--text-3); font-size: 10px; }
+.cf-diff-badge {
+  font-size: 9.5px; padding: 2px 7px; border-radius: 8px;
+  font-weight: 600; border: 1px solid transparent;
+}
+.cf-diff-badge.s-success { background: rgba(94,225,161,.12); color: var(--success); border-color: rgba(94,225,161,.2); }
+.cf-diff-badge.s-failed  { background: rgba(255,122,133,.12); color: var(--danger);  border-color: rgba(255,122,133,.2); }
+.cf-diff-badge.s-skipped { background: rgba(91,101,133,.12);  color: var(--text-3);  border-color: rgba(91,101,133,.2); }
+.cf-diff-badge.s-running { background: rgba(251,191,36,.12);  color: var(--warn);    border-color: rgba(251,191,36,.2); }
+.cf-diff-badge.s-pending { background: rgba(91,101,133,.1);   color: var(--text-3);  border-color: rgba(91,101,133,.15); }
+.cf-diff-badge.cf-diff-added   { background: rgba(94,225,161,.12); color: var(--success); border-color: rgba(94,225,161,.2); }
+.cf-diff-badge.cf-diff-removed { background: rgba(255,122,133,.12); color: var(--danger); border-color: rgba(255,122,133,.2); }
+.cf-diff-content {
+  width: 100%; margin-top: 3px;
+  font-size: 11px; color: var(--text-3);
+  font-family: var(--mono); line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word;
+}

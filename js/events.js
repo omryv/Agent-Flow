@@ -115,10 +115,71 @@ function _finishImport(run) {
   });
 }
 
+// ── Search ───────────────────────────────────────────────
+function setSearch(q) { setState({ searchQuery: typeof q === 'string' ? q : '' }); }
+
+// ── Toast ────────────────────────────────────────────────
+function _showToast(msg) {
+  var t = document.createElement('div');
+  t.className = 'import-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 3000);
+}
+
+// ── Paste import ─────────────────────────────────────────
+function _onPaste(e) {
+  const tag = e.target && e.target.tagName;
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+  if (modalOpen()) return;
+  const text = e.clipboardData && e.clipboardData.getData('text');
+  if (!text) return;
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { return; }
+  const nativeErr = validateRunSchema(parsed);
+  if (!nativeErr) { _finishImport(parsed); return; }
+  const { run, error } = importFromThirdParty(parsed);
+  if (error) return;
+  const adapterErr = validateRunSchema(run);
+  if (adapterErr) return;
+  _finishImport(run);
+}
+
+// ── Drag-and-drop import ─────────────────────────────────
+function _onDragOver(e) {
+  if (e.dataTransfer && e.dataTransfer.types && Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') !== -1) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+}
+
+function _onDrop(e) {
+  e.preventDefault();
+  if (modalOpen()) return;
+  const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!file) return;
+  if (!/\.json$/i.test(file.name)) { _showToast('Only .json files are supported.'); return; }
+  if (file.size > 2 * 1024 * 1024) { _showToast('File too large (max 2 MB).'); return; }
+  const reader = new FileReader();
+  reader.onerror = function() { _showToast('Could not read file.'); };
+  reader.onload = function(ev) {
+    let parsed;
+    try { parsed = JSON.parse(ev.target.result); } catch { _showToast('Invalid JSON.'); return; }
+    const nativeErr = validateRunSchema(parsed);
+    if (!nativeErr) { _finishImport(parsed); return; }
+    const { run, error } = importFromThirdParty(parsed);
+    if (error) { _showToast('Unrecognised format: ' + error); return; }
+    const adapterErr = validateRunSchema(run);
+    if (adapterErr) { _showToast('Adapter output invalid.'); return; }
+    _finishImport(run);
+  };
+  reader.readAsText(file);
+}
+
 // ── Action dispatch ──────────────────────────────────────
 const ACTIONS = {
   closeModal, doImport, handleExport, openImportDialog,
-  selectRun, selectNode, setTab, setCf, toggleCf,
+  selectRun, selectNode, setTab, setCf, toggleCf, setSearch,
   modalBackdrop(_id, _el, e) { if (e.target === _el) closeModal(); },
 };
 
@@ -177,6 +238,11 @@ function _onKey(e) {
   }
 
   if (!mod && !e.altKey && !e.shiftKey) {
+    if (e.key === '/') {
+      var searchEl = document.querySelector('.search-box input');
+      if (searchEl) { e.preventDefault(); searchEl.focus(); searchEl.select(); }
+      return;
+    }
     if (e.key === 'g' || e.key === 'G') { e.preventDefault(); setTab('graph'); return; }
     if (e.key === 'c' || e.key === 'C') { e.preventDefault(); setTab('counterfactuals'); return; }
     if (e.key === 'ArrowUp')    { e.preventDefault(); _cycleRun(-1); return; }
@@ -195,6 +261,9 @@ function installDelegation() {
   document.addEventListener('click', _delegatedClick);
   document.addEventListener('change', _delegatedChange);
   document.addEventListener('keydown', _onKey);
+  document.addEventListener('paste', _onPaste);
+  document.addEventListener('dragover', _onDragOver);
+  document.addEventListener('drop', _onDrop);
 }
 
 function attachEvents() {}
