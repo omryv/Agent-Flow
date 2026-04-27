@@ -119,6 +119,18 @@ function buildCanvasArea(view) {
         </div>
       </div>
       <div style="flex:1"></div>
+      ${state.activeTab === 'graph' && view ? `
+        <div class="search-box">
+          <input
+            type="search"
+            placeholder="Search nodes…"
+            value="${escAttr(state.searchQuery || '')}"
+            data-change="setSearch"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+      ` : ''}
       ${state.activeTab === 'graph' ? `
         <div class="cf-selector">
           <label for="cf-select">Scenario:</label>
@@ -152,6 +164,17 @@ function buildGraph(view) {
   const { run, overriddenNodeIds } = view;
   const positions = getPositionsForRun(state.activeRunId, run);
 
+  var q = (state.searchQuery || '').toLowerCase().trim();
+  var matchingIds = new Set(
+    run.nodes
+      .filter(function(n) {
+        if (!q) return true;
+        return (n.name || '').toLowerCase().indexOf(q) !== -1 ||
+               (n.content || '').toLowerCase().indexOf(q) !== -1;
+      })
+      .map(function(n) { return n.id; })
+  );
+
   let maxX = 0, maxY = 0;
   Object.values(positions).forEach(p => {
     maxX = Math.max(maxX, p.x + NODE_W);
@@ -168,7 +191,7 @@ function buildGraph(view) {
     const isCfOverride = overriddenNodeIds.has(node.id);
 
     return `
-    <div class="node-wrapper" data-node-id="${escAttr(node.id)}" style="left:${pos.x}px;top:${pos.y}px;">
+    <div class="node-wrapper" data-node-id="${escAttr(node.id)}" style="left:${pos.x}px;top:${pos.y}px;opacity:${q && !matchingIds.has(node.id) ? '0.2' : '1'};">
       <div class="node ${isSelected ? 'selected' : ''} ${isCfOverride ? 'cf-override' : ''}"
            data-action="selectNode" data-id="${escAttr(node.id)}" role="button" tabindex="0" aria-pressed="${isSelected}">
         <div class="node-header">
@@ -190,7 +213,8 @@ function buildGraph(view) {
     const from = positions[e.from], to = positions[e.to];
     if (!from || !to) return '';
     const isCf = overriddenNodeIds.has(e.from) || overriddenNodeIds.has(e.to);
-    return `<path class="edge ${isCf ? 'cf' : ''}" data-edge-id="${escAttr(e.from + '__' + e.to)}" d="${esc(makeEdgePath(from, to))}"/>`;
+    const isDimmed = q && !matchingIds.has(e.from) && !matchingIds.has(e.to);
+    return `<path class="edge ${isCf ? 'cf' : ''} ${isDimmed ? 'edge-dimmed' : ''}" data-edge-id="${escAttr(e.from + '__' + e.to)}" d="${esc(makeEdgePath(from, to))}"/>`;
   }).join('');
 
   return `
@@ -200,6 +224,59 @@ function buildGraph(view) {
       ${nodesHTML}
     </div>
   </div>`;
+}
+
+function _buildCfDiffSummary(cf, originalRun, cfRun) {
+  const originalNodes = new Map((originalRun.nodes || []).map(function(n) { return [n.id, n]; }));
+  const cfNodes = new Map((cfRun.nodes || []).map(function(n) { return [n.id, n]; }));
+  const allIds = Array.from(new Set(
+    Array.from(originalNodes.keys()).concat(Array.from(cfNodes.keys()))
+  )).filter(function(id) {
+    return Object.prototype.hasOwnProperty.call(cf.nodeOverrides || {}, id) ||
+           originalNodes.has(id) !== cfNodes.has(id) ||
+           (originalNodes.has(id) && cfNodes.has(id) && (
+             (originalNodes.get(id).status !== cfNodes.get(id).status) ||
+             (originalNodes.get(id).content !== cfNodes.get(id).content)
+           ));
+  });
+  if (allIds.length === 0) return '';
+
+  const statusLabel = function(s) {
+    return (STATUSES[s] && STATUSES[s].label) ? STATUSES[s].label : (s || 'pending');
+  };
+
+  const rows = allIds.map(function(id) {
+    const orig = originalNodes.get(id);
+    const cf2  = cfNodes.get(id);
+    if (orig && cf2) {
+      const origStatus = orig.status || 'pending';
+      const cfStatus   = cf2.status  || 'pending';
+      const contentChanged = orig.content !== cf2.content;
+      const cfContent = cf2.content || '';
+      return `<div class="cf-diff-row">
+  <span class="cf-diff-name">${esc(orig.name || id)}</span>
+  <span class="cf-diff-badge s-${escAttr(origStatus)}">${esc(statusLabel(origStatus))}</span>
+  <span class="cf-diff-arrow">→</span>
+  <span class="cf-diff-badge s-${escAttr(cfStatus)}">${esc(statusLabel(cfStatus))}</span>
+  ${contentChanged ? `<div class="cf-diff-content">${esc(cfContent.slice(0, 120))}${cfContent.length > 120 ? '…' : ''}</div>` : ''}
+</div>`;
+    } else if (!orig && cf2) {
+      return `<div class="cf-diff-row">
+  <span class="cf-diff-name">${esc(cf2.name || id)}</span>
+  <span class="cf-diff-badge cf-diff-added">Added</span>
+</div>`;
+    } else {
+      return `<div class="cf-diff-row">
+  <span class="cf-diff-name">${esc(orig.name || id)}</span>
+  <span class="cf-diff-badge cf-diff-removed">Removed</span>
+</div>`;
+    }
+  }).join('');
+
+  return `<div class="cf-diff-summary">
+  <div class="cf-diff-title">What changed</div>
+  ${rows}
+</div>`;
 }
 
 function buildCfTab(view) {
@@ -217,6 +294,10 @@ function buildCfTab(view) {
   return `<div id="graph-scroll"><div id="cf-list">
     ${cfs.map(cf => {
       const active = state.activeCounterfactual === cf.id;
+      const cfRun = active && view.isCounterfactual ? view.run : null;
+      const diffSummary = (active && view.isCounterfactual && cfRun)
+        ? _buildCfDiffSummary(cf, originalRun, cfRun)
+        : '';
       return `
       <div class="cf-card ${active ? 'active' : ''}" data-action="toggleCf" data-id="${escAttr(cf.id)}" role="button" tabindex="0">
         <div class="cf-card-title">
@@ -225,6 +306,7 @@ function buildCfTab(view) {
           ${active ? `<span style="font-size:10px;color:var(--accent-2);margin-left:auto">Active</span>` : ''}
         </div>
         <div class="cf-card-desc">${esc(cf.description || '')}</div>
+        ${diffSummary}
         <div class="cf-overrides">
           ${Object.keys(cf.nodeOverrides).map(nid => {
             const node = originalRun.nodes.find(n => n.id === nid);
