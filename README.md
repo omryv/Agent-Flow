@@ -352,6 +352,8 @@ Position formula:
 ```
 Agent-Flow/
 ├── index.html                    # Single HTML entry point; CSP meta; script tags
+├── assets/
+│   └── favicon.png               # App favicon (PNG); referenced by <link rel="icon">
 ├── css/
 │   └── styles.css                # Full application stylesheet (~700 lines)
 │                                 # Dark theme, glass morphism, CSS variables
@@ -379,7 +381,8 @@ Agent-Flow/
 │   ├── state.test.js             # 50 tests
 │   └── utils.test.js             # 40 tests
 ├── docs/
-│   └── release-validation-2025-04-25.md   # Full v1.0 audit report
+│   ├── release-validation-2025-04-25.md   # Full v1.0 audit report
+│   └── report-v0.2.0.md                   # v0.2.0 change report
 ├── CODEBASE_OVERVIEW.md          # Architecture reference and test documentation
 ├── SECURITY.md                   # Vulnerability disclosure policy
 ├── LICENSE                       # Proprietary — Visigence
@@ -416,7 +419,8 @@ Each file may only use names introduced by files above it in this list. There ar
 | ID allow-list | `SAFE_ID_RE = /^[A-Za-z0-9_-]{1,80}$/` — all node, run, edge, and CF IDs are validated on import and sanitised in `safeId()` during adapter conversion. |
 | Schema length caps | `validateRunSchema`: name ≤ 200, content ≤ 10 000, nodes ≤ 500, edges ≤ 2 000 |
 | Referential integrity | Edges whose `from` or `to` reference a non-existent node ID are rejected at import time |
-| Content Security Policy | `default-src 'self'` with `style-src 'self' 'unsafe-inline'` (required for inline node colour variables). Identical directives in both the `<meta>` tag and the `vercel.json` HTTP header. |
+| Content Security Policy | `default-src 'none'` with `style-src 'self' 'unsafe-inline'` (required for inline node colour variables). Identical directives in both the `<meta>` tag and the `vercel.json` HTTP header. |
+| Robots meta | `<meta name="robots" content="noindex, nofollow">` prevents search-engine indexing and link-following of the app. |
 | localStorage cap | `SafeStore` serializes, checks `json.length > 4 MB`, and discards the write if over limit. The prior stored value is not overwritten. |
 | Import file size cap | `events.js` rejects files larger than 2 MB before attempting to parse. |
 | No eval, no Function() | No dynamic code execution anywhere in the codebase. |
@@ -513,6 +517,15 @@ Tests run in a Node.js `vm.createContext` sandbox that mocks `document`, `window
 **Pre-1.0. Not yet tagged.**
 
 All known blockers from the release validation audit (`docs/release-validation-2025-04-25.md`) have been resolved. The `v1.0` tag will be pushed after manual browser verification is complete (XSS paste test, localStorage-disabled boot, 500-node render performance, accessibility pass).
+
+Favicon (`assets/favicon.png`) and all security structures have been verified:
+
+- `assets/favicon.png` is present and correctly referenced via `<link rel="icon">` in `index.html`.
+- The CSP directive in the `<meta http-equiv="Content-Security-Policy">` tag is identical to the `Content-Security-Policy` HTTP header in `vercel.json`.
+- All nine security HTTP headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `Cross-Origin-Embedder-Policy`, `Content-Security-Policy`) are set in `vercel.json`.
+- All 260 unit tests pass (`npm test`).
+
+**Vercel deployment is pending re-deployment.** The `vercel.json` configuration is in place and will take effect on the next deploy.
 
 ---
 
