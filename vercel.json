@@ -17,12 +17,12 @@
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests" }
       ]
     },
-    {
-      "source": "/js/(.*)\\.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
-      ]
-    },
+  {
+  "source": "/assets/favicon.png",
+  "headers": [
+    { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
+  ]
+},
     {
       "source": "/css/(.*)\\.css",
       "headers": [
