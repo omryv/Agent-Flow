@@ -56,7 +56,7 @@ function buildHeader(view) {
   const run = view ? view.run : null;
   return `
   <div id="header">
-    <div class="logo"><img src="favicon.png" class="logo-img" alt=""> AgentFlow <span class="tagline">Trace Observer</span></div>
+    <div class="logo"><img src="assets/favicon.png" class="logo-img" alt=""> AgentFlow <span class="tagline">Trace Observer</span></div>
     <div class="spacer"></div>
     ${run ? `<button class="btn" data-action="handleExport" title="Export (⌘E)">${ICONS.export} Export</button>` : ''}
     <button class="btn" data-action="openImportDialog" title="Import (⌘I)">${ICONS.import} Import</button>

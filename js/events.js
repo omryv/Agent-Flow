@@ -1,4 +1,4 @@
-/*! AgentFlow — Copyright (c) 2026 Omry Damari 'Visigence" . Proprietary. */
+/*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
 'use strict';
 
 // ── Modal ────────────────────────────────────────────────
