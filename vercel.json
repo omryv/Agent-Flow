@@ -2,24 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [
-    { "source": "/package.json",            "destination": "/", "statusCode": 404 },
-    { "source": "/package-lock.json",       "destination": "/", "statusCode": 404 },
-    { "source": "/tsconfig.json",           "destination": "/", "statusCode": 404 },
-
-    { "source": "/README.md",               "destination": "/", "statusCode": 404 },
-    { "source": "/CHANGELOG.md",            "destination": "/", "statusCode": 404 },
-    { "source": "/CODEBASE_OVERVIEW.md",    "destination": "/", "statusCode": 404 },
-    { "source": "/SECURITY.md",             "destination": "/", "statusCode": 404 },
-    { "source": "/LICENSE",                 "destination": "/", "statusCode": 404 },
-    { "source": "/.gitignore",              "destination": "/", "statusCode": 404 },
-
-    { "source": "/tests/(.*)",              "destination": "/", "statusCode": 404 },
-    { "source": "/docs/(.*)",               "destination": "/", "statusCode": 404 },
-    { "source": "/examples/(.*)",           "destination": "/", "statusCode": 404 },
-    { "source": "/.github/(.*)",            "destination": "/", "statusCode": 404 },
-    { "source": "/public/(.*)",             "destination": "/", "statusCode": 404 }
-  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -54,13 +36,7 @@
       ]
     },
     {
-      "source": "/index.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/",
+      "source": "/(index\\.html)?",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
