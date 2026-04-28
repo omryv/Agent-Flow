@@ -1,62 +1,31 @@
+
 # AgentFlow
 
 **Read-only counterfactual inspector for LLM agent execution traces.**
 
-Import a trace exported from LangSmith, LangFuse, or W&B Weave — or a native `.agentflow.json` file. AgentFlow renders the execution as an interactive directed acyclic graph, lets you flip between the original run and any embedded counterfactual scenarios, and shows you exactly which nodes changed, how the metrics shifted, and what the final answer would have been.
+Import a trace exported from LangSmith, LangFuse, or W&B Weave — or a native `.agentflow.json` file. AgentFlow renders the execution as an interactive directed acyclic graph, lets you flip between the original run and any embedded counterfactual scenarios, and shows exactly which nodes changed, how the metrics shifted, and what the final answer would have been.
 
 Zero build step. Zero runtime dependencies. One HTML file, eight JavaScript modules, one stylesheet.
 
+---
+
+## Preview
 
 
-## File structure
+<p align="center">
+  <img src="./docs/8.png" alt="AgentFlow trace graph view" width="900">
+</p>
 
-```
-Agent-Flow/
-├── index.html                    # Single HTML entry point; CSP meta; script tags
-├── assets/
-│   └── favicon.png               # App favicon (PNG); referenced by <link rel="icon">
-├── css/
-│   └── styles.css                # Full application stylesheet (~700 lines)
-│                                 # Dark theme, glass morphism, CSS variables
-├── js/
-│   ├── constants.js              # SAFE_ID_RE, ICONS (SVG), ROLES, STATUSES
-│   ├── utils.js                  # esc(), escAttr(), clampStr(), SafeStore, ErrorBoundary
-│   ├── data.js                   # validateRunSchema() — schema + referential integrity
-│   ├── state.js                  # State atom, setState(), getActiveRunView(),
-│   │                             #   _normalizeState(), _materializeCounterfactualRun(),
-│   │                             #   _buildRunView(), clone helpers
-│   ├── layout.js                 # layoutNodes() — Kahn's BFS DAG layout
-│   ├── adapters.js               # importFromThirdParty(), fromLangSmith/LangFuse/Weave(),
-│   │                             #   detectFormat(), inferRole(), inferStatus(),
-│   │                             #   safeId(), msDiff(), truncate()
-│   ├── render.js                 # HTML string builders for every UI region
-│   ├── events.js                 # DOM event delegation, action dispatch,
-│   │                             #   import/export flows, keyboard shortcuts
-│   └── main.js                   # Boot: ErrorBoundary.install(), installDelegation(), render()
-├── tests/
-│   ├── helpers/
-│   │   └── loadContext.js        # vm sandbox factory — mocks browser globals for Node tests
-│   ├── adapters.test.js          # 103 tests
-│   ├── data-validation.test.js   # 52 tests
-│   ├── layout.test.js            # 14 tests
-│   ├── state.test.js             # 50 tests
-│   └── utils.test.js             # 40 tests
-├── docs/
-│   ├── release-validation-2025-04-25.md   # Full v1.0 audit report
-│   └── report-v0.2.0.md                   # v0.2.0 change report
-├── CODEBASE_OVERVIEW.md          # Architecture reference and test documentation
-├── SECURITY.md                   # Vulnerability disclosure policy
-├── LICENSE                       # Proprietary — Visigence
-├── package.json                  # Jest 29 dev dependency; npm test script
-├── vercel.json                   # Security headers, cache control, SPA rewrites
-└── .gitignore
-```
+
+<p align="center">
+  <img src="./docs/10.png" alt="AgentFlow metrics and final answer preview" width="900">
+</p>
 
 ---
 
 ## Script load order
 
-```
+```txt
 constants.js
     └─▶ utils.js
             └─▶ data.js
@@ -66,32 +35,31 @@ constants.js
                                             └─▶ render.js
                                                     └─▶ events.js
                                                             └─▶ main.js
-```
+````
 
 Each file may only use names introduced by files above it in this list. There are no circular dependencies.
 
 ---
 
 ## Security model
-## Security validation
 
-### SecurityHeaders (A+)
+<p align="center">
+  <img src="./docs/6.png" alt="Grep scan showing no secrets in client bundle" width="900">
+</p>
+
+### SecurityHeaders A+
 
 <p align="center">
   <img src="./docs/1.png" alt="SecurityHeaders A+ report for trace.observer" width="777">
 </p>
 
----
-
 ### Platform scan overview
 
 <p align="center">
-  <img src="./docs/2.png" alt="Recent scans, hall of fame and hall of shame overview" width="777">
+  <img src="./docs/2.png" alt="Recent scans, hall of fame, and hall of shame overview" width="777">
 </p>
 
----
-
-### Infrastructure validation (redirects, TLS, canonical)
+### Infrastructure validation
 
 <p align="center">
   <img src="./docs/3.png" alt="Redirect, TLS, and canonical checks passing" width="777">
@@ -99,52 +67,38 @@ Each file may only use names introduced by files above it in this list. There ar
 
 ---
 
-### Static bundle secret scan
-
-<p align="center">
-  <img src="./docs/4.png" alt="Grep scan showing no secrets in client bundle" width="777">
-</p>
-
----
-
-
-
-<p align="center">
-  <img src="./docs/5.png" alt="HTTP status and security headers validation output" width="777">
-</p>
-</p>
 ## Status
-
 
 All known release blockers have been resolved. The application has passed static deployment validation, security-header validation, canonical redirect checks, TLS verification, and bundle secret scanning.
 
 Verified:
 
-- `assets/favicon.png` is present and correctly referenced via `<link rel="icon">` in `index.html`.
-- The CSP directive in the `<meta http-equiv="Content-Security-Policy">` tag matches the deployed `Content-Security-Policy` HTTP header.
-- SecurityHeaders reports an **A+** grade for `https://www.trace.observer/`.
-- HTTPS canonicalization is working:
-  - apex redirects to `https://www.trace.observer/`
-  - `/js/main.js` preserves path on redirect
-  - final canonical responses return `200`
-- TLS certificate validation succeeds for both apex and `www` hostnames.
-- Internal project/source files are not publicly exposed and return `404`.
-- Static bundle secret scan found no API keys, secrets, passwords, bearer tokens, or authorization credentials. Matches are limited to non-sensitive token-count fields such as `token_usage`.
-- All required security HTTP headers are present:
-  - `Content-Security-Policy`
-  - `Permissions-Policy`
-  - `Referrer-Policy`
-  - `Strict-Transport-Security`
-  - `X-Content-Type-Options`
-  - `X-Frame-Options`
-  - `Cross-Origin-Opener-Policy`
-  - `Cross-Origin-Resource-Policy`
-  - `Cross-Origin-Embedder-Policy`
-- All 260 unit tests pass (`npm test`).
+* `assets/favicon.png` is present and correctly referenced via `<link rel="icon">` in `index.html`.
+* The CSP directive in the `<meta http-equiv="Content-Security-Policy">` tag matches the deployed `Content-Security-Policy` HTTP header.
+* SecurityHeaders reports an **A+** grade for `https://www.trace.observer/`.
+* HTTPS canonicalization is working:
 
+  * apex redirects to `https://www.trace.observer/`
+  * `/js/main.js` preserves path on redirect
+  * final canonical responses return `200`
+* TLS certificate validation succeeds for both apex and `www` hostnames.
+* Internal project/source files are not publicly exposed and return `404`.
+* Static bundle secret scan found no API keys, secrets, passwords, bearer tokens, or authorization credentials.
+* Matches are limited to non-sensitive token-count fields such as `token_usage`.
+* All required security HTTP headers are present:
+
+  * `Content-Security-Policy`
+  * `Permissions-Policy`
+  * `Referrer-Policy`
+  * `Strict-Transport-Security`
+  * `X-Content-Type-Options`
+  * `X-Frame-Options`
+  * `Cross-Origin-Opener-Policy`
+  * `Cross-Origin-Resource-Policy`
+  * `Cross-Origin-Embedder-Policy`
+* All 260 unit tests pass (`npm test`).
 
 ---
-
 
 *Copyright © 2026 Omry Damari - Visigence. All rights reserved.*
 *Proprietary and confidential. See `LICENSE` for terms.*
