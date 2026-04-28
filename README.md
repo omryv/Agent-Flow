@@ -73,6 +73,46 @@ Each file may only use names introduced by files above it in this list. There ar
 ---
 
 ## Security model
+## Security validation
+
+### SecurityHeaders (A+)
+
+<p align="center">
+  <img src="./docs/1.png" alt="SecurityHeaders A+ report for trace.observer" width="777">
+</p>
+
+---
+
+### Platform scan overview
+
+<p align="center">
+  <img src="./docs/2.png" alt="Recent scans, hall of fame and hall of shame overview" width="777">
+</p>
+
+---
+
+### Infrastructure validation (redirects, TLS, canonical)
+
+<p align="center">
+  <img src="./docs/3.png" alt="Redirect, TLS, and canonical checks passing" width="777">
+</p>
+
+---
+
+### Static bundle secret scan
+
+<p align="center">
+  <img src="./docs/4.png" alt="Grep scan showing no secrets in client bundle" width="777">
+</p>
+
+---
+
+
+
+<p align="center">
+  <img src="./docs/5.png" alt="HTTP status and security headers validation output" width="777">
+</p>
+</p>
 ## Status
 
 
@@ -106,6 +146,6 @@ Verified:
 ---
 
 
-*Copyright © 2026 Visigence. All rights reserved.*
+*Copyright © 2026 Omry Damari - Visigence. All rights reserved.*
 *Proprietary and confidential. See `LICENSE` for terms.*
 *Security disclosures: see `SECURITY.md`.*
