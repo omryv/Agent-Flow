@@ -1,31 +1,43 @@
-
 # AgentFlow
 
-**Read-only counterfactual inspector for LLM agent execution traces.**
+> **A read-only counterfactual inspector for LLM agent execution traces.**
 
-Import a trace exported from LangSmith, LangFuse, or W&B Weave — or a native `.agentflow.json` file. AgentFlow renders the execution as an interactive directed acyclic graph, lets you flip between the original run and any embedded counterfactual scenarios, and shows exactly which nodes changed, how the metrics shifted, and what the final answer would have been.
+AgentFlow imports traces from LangSmith, LangFuse, W&B Weave, or native `.agentflow.json` files and renders agent execution as an interactive directed acyclic graph. Toggle between the original run and embedded counterfactual scenarios to see exactly which nodes changed, how metrics shifted, and what the final answer would have been.
 
-Zero build step. Zero runtime dependencies. One HTML file, eight JavaScript modules, one stylesheet.
+**Zero build step. Zero runtime dependencies.** One HTML file, eight JavaScript modules, one stylesheet.
+
+<p align="center">
+  <a href="#preview">Preview</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#security">Security</a> •
+  <a href="#release-status">Release Status</a> •
+  <a href="./LICENSE">License</a>
+</p>
 
 ---
 
 ## Preview
 
-
-<p align="center">
-  <img src="./docs/8.png" alt="AgentFlow trace graph view" width="900">
-</p>
-
-
-<p align="center">
-  <img src="./docs/10.png" alt="AgentFlow metrics and final answer preview" width="900">
-</p>
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./docs/8.png" alt="AgentFlow trace graph view" width="100%"><br>
+      <sub><b>Trace Graph View</b><br>Interactive DAG of agent execution</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./docs/10.png" alt="AgentFlow metrics and final answer preview" width="100%"><br>
+      <sub><b>Metrics & Final Answer</b><br>Counterfactual diff and outcome comparison</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
-## Script load order
+## Architecture
 
-```txt
+Modules follow a strict dependency hierarchy. Each file may only reference names introduced by files above it in the chain. **No circular dependencies.**
+
+```text
 constants.js
     └─▶ utils.js
             └─▶ data.js
@@ -35,71 +47,102 @@ constants.js
                                             └─▶ render.js
                                                     └─▶ events.js
                                                             └─▶ main.js
-````
-
-Each file may only use names introduced by files above it in this list. There are no circular dependencies.
+```
 
 ---
 
-## Security model
+## Security
 
-<p align="center">
-  <img src="./docs/6.png" alt="Grep scan showing no secrets in client bundle" width="900">
-</p>
+Validated against static bundle scanning, header configuration, and transport-layer integrity benchmarks.
 
-### SecurityHeaders A+
-
-<p align="center">
-  <img src="./docs/1.png" alt="SecurityHeaders A+ report for trace.observer" width="777">
-</p>
-
-### Platform scan overview
-
-<p align="center">
-  <img src="./docs/2.png" alt="Recent scans, hall of fame, and hall of shame overview" width="777">
-</p>
-
-### Infrastructure validation
-
-<p align="center">
-  <img src="./docs/3.png" alt="Redirect, TLS, and canonical checks passing" width="777">
-</p>
-
----
-
-## Status
-
-All known release blockers have been resolved. The application has passed static deployment validation, security-header validation, canonical redirect checks, TLS verification, and bundle secret scanning.
-
-Verified:
-
-* `assets/favicon.png` is present and correctly referenced via `<link rel="icon">` in `index.html`.
-* The CSP directive in the `<meta http-equiv="Content-Security-Policy">` tag matches the deployed `Content-Security-Policy` HTTP header.
-* SecurityHeaders reports an **A+** grade for `https://www.trace.observer/`.
-* HTTPS canonicalization is working:
-
-  * apex redirects to `https://www.trace.observer/`
-  * `/js/main.js` preserves path on redirect
-  * final canonical responses return `200`
-* TLS certificate validation succeeds for both apex and `www` hostnames.
-* Internal project/source files are not publicly exposed and return `404`.
-* Static bundle secret scan found no API keys, secrets, passwords, bearer tokens, or authorization credentials.
-* Matches are limited to non-sensitive token-count fields such as `token_usage`.
-* All required security HTTP headers are present:
-
-  * `Content-Security-Policy`
-  * `Permissions-Policy`
-  * `Referrer-Policy`
-  * `Strict-Transport-Security`
-  * `X-Content-Type-Options`
-  * `X-Frame-Options`
-  * `Cross-Origin-Opener-Policy`
-  * `Cross-Origin-Resource-Policy`
-  * `Cross-Origin-Embedder-Policy`
-* All 260 unit tests pass (`npm test`).
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./docs/1.png" alt="SecurityHeaders A+" width="100%"><br>
+      <sub><b>SecurityHeaders: A+</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./docs/2.png" alt="Platform scan" width="100%"><br>
+      <sub><b>Platform Scan Overview</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./docs/3.png" alt="Infrastructure validation" width="100%"><br>
+      <sub><b>Infrastructure Validation</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./docs/6.png" alt="Bundle secret scan" width="100%"><br>
+      <sub><b>Bundle Secret Scan: Clean</b></sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
-*Copyright © 2026 Omry Damari - Visigence. All rights reserved.*
-*Proprietary and confidential. See `LICENSE` for terms.*
-*Security disclosures: see `SECURITY.md`.*
+## Release Status
+
+> All known release blockers resolved. Application has passed static deployment validation, security-header validation, canonical redirect checks, TLS verification, and bundle secret scanning.
+
+### Asset & Configuration Integrity
+
+| Check | Status |
+|---|---|
+| `assets/favicon.png` present and referenced via `<link rel="icon">` | ✅ |
+| CSP `<meta>` directive matches deployed HTTP header | ✅ |
+| Internal project/source files return `404` | ✅ |
+
+### Transport & Canonicalization
+
+| Check | Status |
+|---|---|
+| SecurityHeaders grade for `https://www.trace.observer/` | **A+** |
+| Apex redirects to `https://www.trace.observer/` | ✅ |
+| Path preservation on redirect (e.g. `/js/main.js`) | ✅ |
+| Final canonical responses return `200` | ✅ |
+| TLS certificate valid for apex and `www` hostnames | ✅ |
+
+### Bundle Secret Scan
+
+Static scan found no API keys, secrets, passwords, bearer tokens, or authorization credentials. Only non-sensitive matches surfaced (e.g. `token_usage`).
+
+### Required Security Headers
+
+<table>
+  <tr>
+    <td>
+
+- `Content-Security-Policy`
+- `Permissions-Policy`
+- `Referrer-Policy`
+- `Strict-Transport-Security`
+- `X-Content-Type-Options`
+
+    </td>
+    <td>
+
+- `X-Frame-Options`
+- `Cross-Origin-Opener-Policy`
+- `Cross-Origin-Resource-Policy`
+- `Cross-Origin-Embedder-Policy`
+
+    </td>
+  </tr>
+</table>
+
+### Test Suite
+
+```bash
+npm test
+# ✓ 260 tests passing
+```
+
+---
+
+<p align="center">
+  <sub>
+    Copyright © 2026 <b>Omry Damari — Visigence</b>. All rights reserved.<br>
+    Proprietary and confidential. See <a href="./LICENSE">LICENSE</a> for terms.<br>
+    Security disclosures: <a href="./SECURITY.md">SECURITY.md</a>
+  </sub>
+</p>
