@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
@@ -17,12 +18,13 @@
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests" }
       ]
     },
-  {
-  "source": "/assets/favicon.png",
-  "headers": [
-    { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
-  ]
-},
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" },
+        { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" }
+      ]
+    },
     {
       "source": "/css/(.*)\\.css",
       "headers": [
