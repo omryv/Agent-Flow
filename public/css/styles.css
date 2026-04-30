@@ -151,6 +151,8 @@ body {
 }
 .btn.danger:hover { background: linear-gradient(180deg, rgba(255,122,133,.16), rgba(255,122,133,.08)); border-color: rgba(255,122,133,.5); }
 
+.btn.icon-btn { padding: 0; width: 26px; height: 26px; justify-content: center; }
+
 /* ── Sidebar ───────────────────────────────────────── */
 #sidebar {
   width: 272px; flex-shrink: 0;
