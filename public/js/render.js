@@ -68,7 +68,10 @@ function buildSidebar() {
   <div id="sidebar">
     <div id="sidebar-header">
       <h2>Runs</h2>
-      <span style="font-size:11px;color:var(--text-3)">${runs.length} trace${runs.length !== 1 ? 's' : ''}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--text-3)">${runs.length} trace${runs.length !== 1 ? 's' : ''}</span>
+        <button class="btn icon-btn" data-action="openImportDialog" title="Import run (⌘I)">${ICONS.import}</button>
+      </div>
     </div>
     <div id="runs-list" role="listbox">
       ${runs.length === 0 ? `<div class="no-runs-msg">No runs yet.<br>Import one.</div>` : ''}
