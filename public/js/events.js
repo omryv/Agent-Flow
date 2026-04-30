@@ -202,6 +202,11 @@ function _delegatedChange(e) {
   if (e.target.dataset.role === 'import-file') _onImportFileChange(e);
 }
 
+function _delegatedInput(e) {
+  const t = e.target.closest('[data-input]');
+  if (t) _dispatch(t.dataset.input, t.value, t, e);
+}
+
 // ── Run / node navigation ────────────────────────────────
 function _cycleRun(dir) {
   if (state.runs.length === 0) return;
@@ -238,6 +243,15 @@ function _onKey(e) {
   }
 
   if (!mod && !e.altKey && !e.shiftKey) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const el = document.activeElement;
+      const role = el && typeof el.getAttribute === 'function' && el.getAttribute('role');
+      if (el && el.dataset && el.dataset.action && (role === 'button' || role === 'tab')) {
+        e.preventDefault();
+        _dispatch(el.dataset.action, el.dataset.id, el, e);
+        return;
+      }
+    }
     if (e.key === '/') {
       var searchEl = document.querySelector('.search-box input');
       if (searchEl) { e.preventDefault(); searchEl.focus(); searchEl.select(); }
@@ -253,13 +267,9 @@ function _onKey(e) {
 }
 
 function installDelegation() {
-  const app = document.getElementById('app');
-  if (app) {
-    app.addEventListener('click', _delegatedClick);
-    app.addEventListener('change', _delegatedChange);
-  }
   document.addEventListener('click', _delegatedClick);
   document.addEventListener('change', _delegatedChange);
+  document.addEventListener('input', _delegatedInput);
   document.addEventListener('keydown', _onKey);
   document.addEventListener('paste', _onPaste);
   document.addEventListener('dragover', _onDragOver);

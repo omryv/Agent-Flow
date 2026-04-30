@@ -613,7 +613,6 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
   width: 24px;
   height: 24px;
   vertical-align: middle;
-  margin-right: 6px;
   border-radius: 4px;
 }
 

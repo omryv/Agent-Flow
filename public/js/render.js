@@ -116,8 +116,8 @@ function buildCanvasArea(view) {
     <div id="toolbar">
       <span class="section-label">View</span>
       <div class="tab-bar">
-        <div class="tab ${state.activeTab === 'graph' ? 'active' : ''}" data-action="setTab" data-id="graph" role="tab" aria-selected="${state.activeTab === 'graph'}">Graph</div>
-        <div class="tab ${state.activeTab === 'counterfactuals' ? 'active' : ''}" data-action="setTab" data-id="counterfactuals" role="tab" aria-selected="${state.activeTab === 'counterfactuals'}">
+        <div class="tab ${state.activeTab === 'graph' ? 'active' : ''}" data-action="setTab" data-id="graph" role="tab" tabindex="${state.activeTab === 'graph' ? '0' : '-1'}" aria-selected="${state.activeTab === 'graph'}">Graph</div>
+        <div class="tab ${state.activeTab === 'counterfactuals' ? 'active' : ''}" data-action="setTab" data-id="counterfactuals" role="tab" tabindex="${state.activeTab === 'counterfactuals' ? '0' : '-1'}" aria-selected="${state.activeTab === 'counterfactuals'}">
           Counterfactuals <span style="font-size:10px;color:var(--text-3);margin-left:3px">${realCfList.length}</span>
         </div>
       </div>
@@ -128,7 +128,7 @@ function buildCanvasArea(view) {
             type="search"
             placeholder="Search nodes…"
             value="${escAttr(state.searchQuery || '')}"
-            data-change="setSearch"
+            data-input="setSearch"
             autocomplete="off"
             spellcheck="false"
           />
