@@ -119,7 +119,7 @@ function buildCanvasArea(view) {
         </div>
       </div>
       <button class="btn logic-engine-btn" data-action="generateCounterfactuals" title="Compute counterfactual scenarios using Logic Engine">
-        ⚡ Compute Counterfactuals
+        <span style="font-size:11px;letter-spacing:0.02em;">Compute counterfactuals</span>
       </button>
       <div style="flex:1"></div>
       ${state.activeTab === 'graph' && view ? `

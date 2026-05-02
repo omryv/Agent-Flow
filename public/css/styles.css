@@ -697,20 +697,30 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
   white-space: pre-wrap; word-break: break-word;
 }
 
+
 .logic-engine-btn {
-  margin-left: 12px;
-  background: linear-gradient(135deg, #5f7ef5 0%, #8b5cf6 100%);
-  color: #fff;
-  border: 0;
-  font-weight: 600;
-  padding: 7px 14px;
+  margin-left: 8px;
+  background: rgba(139, 92, 246, 0.12);
+  color: #b794f6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  font-weight: 500;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
-  transition: opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 .logic-engine-btn:hover {
-  opacity: 0.85;
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #d6bcfa;
+}
+.logic-engine-btn:active {
+  background: rgba(139, 92, 246, 0.25);
 }
 .logic-engine-btn:disabled {
   opacity: 0.4;
