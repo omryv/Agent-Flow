@@ -17,6 +17,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write          # needed to push to badges branch
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
@@ -25,4 +27,51 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm audit --audit-level=high
-      - run: npm test
+
+      - name: Run tests and capture count
+        id: jest
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee jest.log
+          COUNT=$(grep -oP 'Tests:\s+\K\d+(?=\s+passed)' jest.log | head -1)
+          echo "count=${COUNT:-0}" >> "$GITHUB_OUTPUT"
+          echo "Test count: ${COUNT:-0}"
+
+      - name: Publish badge JSON to badges branch
+        if: github.ref == 'refs/heads/main' && success()
+        env:
+          COUNT: ${{ steps.jest.outputs.count }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/badges
+          cat > /tmp/badges/tests.json <<JSON
+          {
+            "schemaVersion": 1,
+            "label": "tests",
+            "message": "${COUNT} passing",
+            "color": "brightgreen"
+          }
+          JSON
+
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Clone or create the badges branch in a separate dir
+          git clone --branch badges --single-branch \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            /tmp/badges-repo 2>/dev/null || {
+              git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" /tmp/badges-repo
+              cd /tmp/badges-repo
+              git checkout --orphan badges
+              git rm -rf . 2>/dev/null || true
+              echo "Badge JSON files for shields.io endpoint badges." > README.md
+              git add README.md
+              git commit -m "init badges branch"
+            }
+
+          cp /tmp/badges/tests.json /tmp/badges-repo/tests.json
+          cd /tmp/badges-repo
+          git add tests.json
+          git diff --cached --quiet || git commit -m "chore(badges): tests=${COUNT}"
+          git push origin badges
