@@ -267,3 +267,43 @@ function installDelegation() {
 }
 
 function attachEvents() {}
+
+// ── Counterfactual materialization (Logic Engine integration) ────────────────
+function materializeCounterfactual(idStr) {
+  const view = getActiveRunView();
+  if (!view || view.isCounterfactual) return;
+
+  const idx = parseInt(idStr, 10);
+  if (!Number.isFinite(idx) || idx < 0) return;
+
+  const suggestions = Array.isArray(view.nodeSuggestions) ? view.nodeSuggestions : [];
+  const suggestion = suggestions[idx];
+  if (!suggestion) return;
+
+  if (typeof window === 'undefined' || !window.AgentFlowCounterfactual) return;
+
+  const newCf = window.AgentFlowCounterfactual.materializeRevision(view.run, suggestion);
+  if (!newCf) return;
+
+  const activeRun = state.runs.find(r => r.id === state.activeRunId);
+  if (!activeRun) return;
+
+  const existingCfs = Array.isArray(activeRun.counterfactuals) ? activeRun.counterfactuals : [];
+  if (existingCfs.some(c => c.id === newCf.id)) {
+    setState({ activeCounterfactual: newCf.id, activeTab: 'graph' });
+    return;
+  }
+
+  const updatedRuns = state.runs.map(r => {
+    if (r.id !== state.activeRunId) return r;
+    return Object.assign({}, r, {
+      counterfactuals: existingCfs.concat([newCf]),
+    });
+  });
+
+  setState({
+    runs: updatedRuns,
+    activeCounterfactual: newCf.id,
+    activeTab: 'graph',
+  });
+}
