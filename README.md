@@ -5,7 +5,10 @@
 [![Tests](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml/badge.svg)](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml)
 [![License](https://img.shields.io/github/license/Visigence/Agent-Flow)](LICENSE)
 [![Release](https://img.shields.io/github/v/tag/Visigence/Agent-Flow?label=release)](https://github.com/Visigence/Agent-Flow/releases/tag/AFV1.0)
-[![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Visigence/Agent-Flow/badges/tests.json)](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml)
+[![Verified Tests](https://img.shields.io/badge/verified-260%20unit%20tests-brightgreen)](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml)
+
+> 260 unit tests covering adapter functions (LangSmith, LangFuse, W&B Weave),
+> trace ingestion, layout calculations, state transitions, and schema validation.
 > **A read-only counterfactual inspector for LLM agent execution traces.**
 
 AgentFlow imports traces from LangSmith, LangFuse, W&B Weave, or native `.agentflow.json` files and renders agent execution as an interactive directed acyclic graph. Toggle between the original run and embedded counterfactual scenarios to see exactly which nodes changed, how metrics shifted, and what the final answer would have been.
