@@ -1,10 +1,15 @@
 # AgentFlow
+[![Live](https://img.shields.io/badge/live-trace.observer-5f7ef5)](https://trace.observer)
+[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=trace.observer&followRedirects=on)
+[![Mozilla Observatory](https://img.shields.io/mozilla-observatory/grade/trace.observer?publish&label=Mozilla%20Observatory)](https://developer.mozilla.org/en-US/observatory/analyze?host=trace.observer)
+[![Tests](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml/badge.svg)](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml)
+[![License](https://img.shields.io/github/license/Visigence/Agent-Flow)](LICENSE)
+[![Release](https://img.shields.io/github/v/tag/Visigence/Agent-Flow?label=release)](https://github.com/Visigence/Agent-Flow/releases/tag/AFV1.0)
 
 > **A read-only counterfactual inspector for LLM agent execution traces.**
 
 AgentFlow imports traces from LangSmith, LangFuse, W&B Weave, or native `.agentflow.json` files and renders agent execution as an interactive directed acyclic graph. Toggle between the original run and embedded counterfactual scenarios to see exactly which nodes changed, how metrics shifted, and what the final answer would have been.
 
-**Zero build step. Zero runtime dependencies.** One HTML file, eight JavaScript modules, one stylesheet.
 
 <p align="center">
   <a href="#preview">Preview</a> •
@@ -21,11 +26,11 @@ AgentFlow imports traces from LangSmith, LangFuse, W&B Weave, or native `.agentf
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="./docs/8.png" alt="AgentFlow trace graph view" width="100%"><br>
+      <img src="./docs/8.png" alt="AgentFlow trace graph view" width="80%"><br>
       <sub><b>Trace Graph View</b><br>Interactive DAG of agent execution</sub>
     </td>
     <td align="center" width="50%">
-      <img src="./docs/10.png" alt="AgentFlow metrics and final answer preview" width="100%"><br>
+      <img src="./docs/10.png" alt="AgentFlow metrics and final answer preview" width="80%"><br>
       <sub><b>Metrics & Final Answer</b><br>Counterfactual diff and outcome comparison</sub>
     </td>
   </tr>
