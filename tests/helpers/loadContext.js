@@ -26,7 +26,7 @@ const vm   = require('vm');
 const fs   = require('fs');
 const path = require('path');
 
-const JS_DIR = path.join(__dirname, '../../js');
+const JS_DIR = path.join(__dirname, '../../public/js');
 
 // Scripts loaded in the same dependency order as the HTML <script> tags.
 // render.js, events.js, drag.js, and main.js are intentionally excluded:
