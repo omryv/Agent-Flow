@@ -466,52 +466,5 @@ function buildDetail(view) {
     </div>
   </div>`;
 
-  }
-  const role = ROLES[node.role] || ROLES.input;
-  const statusDef = STATUSES[node.status] || STATUSES.pending;
-  const isCfOverride = view.overriddenNodeIds.has(node.id);
-  const originalNode = view.isCounterfactual && view.originalRun
-    ? view.originalRun.nodes.find(n => n.id === node.id) : null;
 
-  return `<div id="detail">
-    <div id="detail-inner">
-      ${isCfOverride ? `<div class="cf-note">${ICONS.info} This node was modified by the counterfactual scenario.</div>` : ''}
-
-      <div class="detail-section">
-        <h3>Node</h3>
-        <div class="detail-row"><span class="label">Name</span><span class="value">${esc(node.name)}</span></div>
-        <div class="detail-row"><span class="label">Role</span><span class="value" style="color:${role.color}">${esc(role.label)}</span></div>
-        <div class="detail-row">
-          <span class="label">Status</span>
-          <span class="value" style="display:flex;align-items:center;gap:6px">
-            <span class="status-dot ${statusDef.cls}"></span>${esc(statusDef.label)}
-          </span>
-        </div>
-        ${node.durationMs !== undefined ? `
-        <div class="detail-row"><span class="label">Duration</span><span class="value">${Number(node.durationMs)|0}ms</span></div>` : ''}
-        <div class="detail-row">
-          <span class="label">ID</span>
-          <span class="value" style="color:var(--text-3);font-family:var(--mono);font-size:11px">${esc(node.id)}</span>
-        </div>
-      </div>
-
-      <div class="detail-section">
-        <h3>Content</h3>
-        <div class="detail-content-box">${esc(node.content)}</div>
-      </div>
-
-      ${isCfOverride && originalNode ? `
-      <div class="detail-section">
-        <h3>Original (before counterfactual)</h3>
-        <div class="detail-row">
-          <span class="label">Status</span>
-          <span class="value" style="display:flex;align-items:center;gap:6px">
-            <span class="status-dot ${STATUSES[originalNode.status]?.cls || 's-pending'}"></span>
-            ${esc(STATUSES[originalNode.status]?.label || originalNode.status)}
-          </span>
-        </div>
-        <div class="detail-content-box" style="opacity:.6">${esc(originalNode.content)}</div>
-      </div>` : ''}
-    </div>
-  </div>`;
-
+}
