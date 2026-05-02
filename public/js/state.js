@@ -1,8 +1,7 @@
 /*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
 'use strict';
 
-let state = _loadInitialState();
-
+let state = null;
 function _cloneNode(node) {
   return Object.assign({}, node);
 }
@@ -274,3 +273,7 @@ function getActiveRunView() {
   const run = state.runs.find(item => item.id === state.activeRunId) || null;
   return _buildRunView(run, state.activeCounterfactual);
 }
+
+
+
+state = _loadInitialState();
