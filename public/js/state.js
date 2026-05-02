@@ -6,6 +6,38 @@ let state = _loadInitialState();
 function _cloneNode(node) {
   return Object.assign({}, node);
 }
+const _suggestionCache = new Map();
+
+function _cacheKey(runId, nodeId) {
+  return (runId || '') + '::' + (nodeId || '');
+}
+
+function _suggestionsForSelection(run, selectedNodeId) {
+  if (!run || !selectedNodeId) return [];
+  if (typeof window === 'undefined' || !window.AgentFlowCounterfactual) return [];
+
+  const key = _cacheKey(run.id, selectedNodeId);
+  if (_suggestionCache.has(key)) return _suggestionCache.get(key);
+
+  let suggestions;
+  try {
+    suggestions = window.AgentFlowCounterfactual.computeNodeCounterfactuals(run, selectedNodeId);
+  } catch (e) {
+    suggestions = [];
+  }
+
+  _suggestionCache.set(key, suggestions);
+  return suggestions;
+}
+
+function _invalidateSuggestionCache(runId) {
+  if (!runId) {
+    _suggestionCache.clear();
+    return;
+  }
+  for (const key of Array.from(_suggestionCache.keys())) {
+    if (key.startsWith(runId + '::')) _suggestionCache.delete(key);
+  }
 
 function _cloneEdge(edge) {
   return Object.assign({}, edge);
@@ -80,16 +112,65 @@ function _materializeCounterfactualRun(run, cf) {
     counterfactuals: Array.isArray(run.counterfactuals) ? run.counterfactuals.map(_cloneCounterfactual) : [],
   });
 }
-
 function _buildRunView(run, counterfactualId) {
   if (!run) return null;
   if (!counterfactualId) {
+    const suggestions = _suggestionsForSelection(run, state && state.selectedNodeId);
     return {
       run,
       originalRun: run,
       isCounterfactual: false,
       overriddenNodeIds: new Set(),
+      nodeSuggestions: suggestions,
     };
+  }
+
+  const cf = (run.counterfactuals || []).find(item => item.id === counterfactualId);
+  if (!cf) {
+    const suggestions = _suggestionsForSelection(run, state && state.selectedNodeId);
+    return {
+      run,
+      originalRun: run,
+      isCounterfactual: false,
+      overriddenNodeIds: new Set(),
+      nodeSuggestions: suggestions,
+    };
+  }
+
+  const originalNodes = new Map(run.nodes.map(node => [node.id, node]));
+  const cfRun = _materializeCounterfactualRun(run, cf);
+  const overriddenNodeIds = new Set(Object.keys(cf.nodeOverrides || {}));
+
+  cfRun.nodes.forEach(node => {
+    const original = originalNodes.get(node.id);
+    if (!original) {
+      overriddenNodeIds.add(node.id);
+      return;
+    }
+    if (
+      node.name !== original.name ||
+      node.role !== original.role ||
+      node.status !== original.status ||
+      node.content !== original.content ||
+      (node.durationMs ?? null) !== (original.durationMs ?? null)
+    ) {
+      overriddenNodeIds.add(node.id);
+    }
+  });
+
+  const cfNodeIds = new Set(cfRun.nodes.map(n => n.id));
+  run.nodes.forEach(node => {
+    if (!cfNodeIds.has(node.id)) overriddenNodeIds.add(node.id);
+  });
+
+  return {
+    run: cfRun,
+    originalRun: run,
+    isCounterfactual: true,
+    overriddenNodeIds,
+    nodeSuggestions: [],
+  
+}
   }
 
   const cf = (run.counterfactuals || []).find(item => item.id === counterfactualId);
@@ -173,9 +254,17 @@ function _normalizeState(raw) {
 function _loadInitialState() {
   return _normalizeState(SafeStore.load());
 }
-
 function setState(patch) {
+  const previousRunsRef = state.runs;
+  const previousSelected = state.selectedNodeId;
+  const previousCf = state.activeCounterfactual;
+
   state = _normalizeState(Object.assign({}, state, patch || {}));
+
+  if (state.runs !== previousRunsRef) _invalidateSuggestionCache();
+  if (state.selectedNodeId !== previousSelected) _invalidateSuggestionCache();
+  if (state.activeCounterfactual !== previousCf) _invalidateSuggestionCache();
+
   SafeStore.save(Object.assign({}, state, { searchQuery: '' }));
   if (typeof render === 'function') render();
   return state;

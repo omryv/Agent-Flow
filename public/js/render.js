@@ -392,6 +392,87 @@ function buildDetail(view) {
   const originalNode = view.isCounterfactual && view.originalRun
     ? view.originalRun.nodes.find(n => n.id === node.id) : null;
 
+  const suggestions = (!view.isCounterfactual && Array.isArray(view.nodeSuggestions))
+    ? view.nodeSuggestions
+    : [];
+
+  const suggestionsHTML = suggestions.length > 0 ? `
+      <div class="detail-section">
+        <h3>Suggested counterfactuals</h3>
+        <p class="detail-hint">Computed by Logic Engine. Each suggestion is the smallest edit that would prevent the final answer from being produced through this node.</p>
+        ${suggestions.map((sug, idx) => `
+          <div class="cf-suggestion" data-suggestion-id="${escAttr(sug.id)}">
+            <div class="cf-suggestion-header">
+              <span class="cf-suggestion-cost">cost ${sug.cost}</span>
+              <span class="cf-suggestion-collateral">collateral ${sug.collateral}</span>
+            </div>
+            <div class="cf-suggestion-summary">${esc(sug.summary)}</div>
+            <div class="cf-suggestion-affected">
+              ${sug.affectedNodeIds.map(id => {
+                const affected = view.run.nodes.find(n => n.id === id);
+                return `<span class="cf-suggestion-tag">${esc(affected ? affected.name : id)}</span>`;
+              }).join('')}
+            </div>
+            <button class="btn cf-suggestion-adopt"
+                    data-action="materializeCounterfactual"
+                    data-id="${escAttr(String(idx))}">
+              Adopt as counterfactual
+            </button>
+          </div>
+        `).join('')}
+      </div>` : '';
+
+  return `<div id="detail">
+    <div id="detail-inner">
+      ${isCfOverride ? `<div class="cf-note">${ICONS.info} This node was modified by the counterfactual scenario.</div>` : ''}
+
+      <div class="detail-section">
+        <h3>Node</h3>
+        <div class="detail-row"><span class="label">Name</span><span class="value">${esc(node.name)}</span></div>
+        <div class="detail-row"><span class="label">Role</span><span class="value" style="color:${role.color}">${esc(role.label)}</span></div>
+        <div class="detail-row">
+          <span class="label">Status</span>
+          <span class="value" style="display:flex;align-items:center;gap:6px">
+            <span class="status-dot ${statusDef.cls}"></span>${esc(statusDef.label)}
+          </span>
+        </div>
+        ${node.durationMs !== undefined ? `
+        <div class="detail-row"><span class="label">Duration</span><span class="value">${Number(node.durationMs)|0}ms</span></div>` : ''}
+        <div class="detail-row">
+          <span class="label">ID</span>
+          <span class="value" style="color:var(--text-3);font-family:var(--mono);font-size:11px">${esc(node.id)}</span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Content</h3>
+        <div class="detail-content-box">${esc(node.content)}</div>
+      </div>
+
+      ${suggestionsHTML}
+
+      ${isCfOverride && originalNode ? `
+      <div class="detail-section">
+        <h3>Original (before counterfactual)</h3>
+        <div class="detail-row">
+          <span class="label">Status</span>
+          <span class="value" style="display:flex;align-items:center;gap:6px">
+            <span class="status-dot ${STATUSES[originalNode.status]?.cls || 's-pending'}"></span>
+            ${esc(STATUSES[originalNode.status]?.label || originalNode.status)}
+          </span>
+        </div>
+        <div class="detail-content-box" style="opacity:.6">${esc(originalNode.content)}</div>
+      </div>` : ''}
+    </div>
+  </div>`;
+
+  }
+  const role = ROLES[node.role] || ROLES.input;
+  const statusDef = STATUSES[node.status] || STATUSES.pending;
+  const isCfOverride = view.overriddenNodeIds.has(node.id);
+  const originalNode = view.isCounterfactual && view.originalRun
+    ? view.originalRun.nodes.find(n => n.id === node.id) : null;
+
   return `<div id="detail">
     <div id="detail-inner">
       ${isCfOverride ? `<div class="cf-note">${ICONS.info} This node was modified by the counterfactual scenario.</div>` : ''}
@@ -433,4 +514,4 @@ function buildDetail(view) {
       </div>` : ''}
     </div>
   </div>`;
-}
+

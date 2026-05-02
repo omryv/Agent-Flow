@@ -39,6 +39,30 @@
   <div id="app"></div>
   <noscript><div style="padding:24px;color:#ecf0fb;font-family:system-ui">This app requires JavaScript.</div></noscript>
 
+  <script type="module">
+    import * as Facts from './js/facts.js';
+    import * as Graph from './js/graph.js';
+    import * as Revision from './js/revision.js';
+    import * as Explain from './js/explain.js';
+    window.LogicEngine = {
+      Fact: Facts.Fact,
+      Query: Facts.Query,
+      parseFacts: Facts.parseFacts,
+      factSetUnion: Facts.factSetUnion,
+      factSetDifference: Facts.factSetDifference,
+      isReachable: Graph.isReachable,
+      findPath: Graph.findPath,
+      computeClosure: Graph.computeClosure,
+      edgesOnPaths: Graph.edgesOnPaths,
+      Revision: Revision.Revision,
+      reviseToFalsify: Revision.reviseToFalsify,
+      reviseToSatisfy: Revision.reviseToSatisfy,
+      explainRevision: Explain.explainRevision,
+      explainAll: Explain.explainAll,
+    };
+  </script>
+  <script src="js/counterfactual.js"></script>
+
   <script src="js/constants.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/data.js"></script>
