@@ -696,3 +696,23 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
   font-family: var(--mono); line-height: 1.5;
   white-space: pre-wrap; word-break: break-word;
 }
+
+.logic-engine-btn {
+  margin-left: 12px;
+  background: linear-gradient(135deg, #5f7ef5 0%, #8b5cf6 100%);
+  color: #fff;
+  border: 0;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: opacity 0.15s;
+}
+.logic-engine-btn:hover {
+  opacity: 0.85;
+}
+.logic-engine-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

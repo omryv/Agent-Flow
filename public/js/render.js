@@ -118,6 +118,9 @@ function buildCanvasArea(view) {
           Counterfactuals <span style="font-size:10px;color:var(--text-3);margin-left:3px">${realCfList.length}</span>
         </div>
       </div>
+      <button class="btn logic-engine-btn" data-action="generateCounterfactuals" title="Compute counterfactual scenarios using Logic Engine">
+        ⚡ Compute Counterfactuals
+      </button>
       <div style="flex:1"></div>
       ${state.activeTab === 'graph' && view ? `
         <div class="search-box">

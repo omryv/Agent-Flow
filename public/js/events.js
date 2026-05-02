@@ -307,3 +307,70 @@ function materializeCounterfactual(idStr) {
     activeTab: 'graph',
   });
 }
+
+// ── Run-level counterfactual generation ──────────────────────────────────────
+function generateCounterfactuals() {
+  if (typeof window === 'undefined' || !window.AgentFlowCounterfactual) {
+    alert('Logic Engine not loaded');
+    return;
+  }
+  const view = getActiveRunView();
+  if (!view) {
+    alert('No active run. Import a trace first.');
+    return;
+  }
+  if (view.isCounterfactual) {
+    alert('Switch to the original run before generating counterfactuals.');
+    return;
+  }
+
+  const run = view.run;
+  const allSuggestions = [];
+  const seenSignatures = new Set();
+
+  run.nodes.forEach(node => {
+    let suggestions;
+    try {
+      suggestions = window.AgentFlowCounterfactual.computeNodeCounterfactuals(run, node.id);
+    } catch (e) {
+      return;
+    }
+    suggestions.forEach(sug => {
+      if (seenSignatures.has(sug.id)) return;
+      seenSignatures.add(sug.id);
+      allSuggestions.push(sug);
+    });
+  });
+
+  allSuggestions.sort((a, b) => a.cost - b.cost || a.collateral - b.collateral);
+  const top = allSuggestions.slice(0, 6);
+
+  if (top.length === 0) {
+    alert('Logic Engine found no counterfactual scenarios for this trace. The trace may be too simple or have only a single execution path.');
+    return;
+  }
+
+  const newCfs = top.map(sug => window.AgentFlowCounterfactual.materializeRevision(run, sug)).filter(Boolean);
+
+  const existing = Array.isArray(run.counterfactuals) ? run.counterfactuals : [];
+  const existingIds = new Set(existing.map(c => c.id));
+  const fresh = newCfs.filter(c => !existingIds.has(c.id));
+
+  if (fresh.length === 0) {
+    setState({ activeTab: 'counterfactuals' });
+    alert('All Logic Engine suggestions are already adopted in this run.');
+    return;
+  }
+
+  const updatedRuns = state.runs.map(r => {
+    if (r.id !== state.activeRunId) return r;
+    return Object.assign({}, r, {
+      counterfactuals: existing.concat(fresh),
+    });
+  });
+
+  setState({
+    runs: updatedRuns,
+    activeTab: 'counterfactuals',
+  });
+}
