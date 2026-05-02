@@ -178,7 +178,7 @@ function _onDrop(e) {
 
 // ── Action dispatch ──────────────────────────────────────
 const ACTIONS = {
-  closeModal, doImport, handleExport, openImportDialog,
+  closeModal, doImport, handleExport, openImportDialog, materializeCounterfactual, generateCounterfactuals,
   selectRun, selectNode, setTab, setCf, toggleCf, setSearch,
   modalBackdrop(_id, _el, e) { if (e.target === _el) closeModal(); },
 };
