@@ -1,0 +1,35 @@
+{
+  "name": "VisigenceStudio Universal",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "forwardPorts": [],
+  "portsAttributes": {
+    "*": {
+      "onAutoForward": "silent",
+      "visibility": "private"
+    }
+  },
+  "remoteEnv": {
+    "NODE_ENV": "development",
+    "HISTFILE": "/dev/null",
+    "HISTSIZE": "0"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "extensions.autoUpdate": false,
+        "extensions.autoCheckUpdates": false,
+        "telemetry.telemetryLevel": "off",
+        "remote.autoForwardPorts": false,
+        "git.allowForcePush": false,
+        "security.workspace.trust.enabled": true
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "github.vscode-pull-request-github",
+        "ms-python.python"
+      ]
+    }
+  }
+}
