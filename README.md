@@ -1,10 +1,6 @@
 # AgentFlow
 [![Live](https://img.shields.io/badge/live-trace.observer-5f7ef5)](https://trace.observer)
 [![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=trace.observer&followRedirects=on)
-[![Mozilla Observatory](https://img.shields.io/mozilla-observatory/grade/trace.observer?publish&label=Mozilla%20Observatory)](https://developer.mozilla.org/en-US/observatory/analyze?host=trace.observer)
-[![Tests](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml/badge.svg)](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml)
-[![License](https://img.shields.io/github/license/Visigence/Agent-Flow)](LICENSE)
-[![Release](https://img.shields.io/github/v/tag/Visigence/Agent-Flow?label=release)](https://github.com/Visigence/Agent-Flow/releases/tag/AFV1.0)
 [![Verified Tests](https://img.shields.io/badge/verified-260%20unit%20tests-brightgreen)](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml)
 
 > 260 unit tests covering adapter functions (LangSmith, LangFuse, W&B Weave),
