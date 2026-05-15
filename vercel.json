@@ -50,10 +50,12 @@
     },
     {
       "source": "/assets/(.*)",
-         {
-      "key": "Access-Control-Allow-Origin",
-      "value": "https://agentflow.garden"
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://agentflow.garden"
         }
+      ]
     },
     {
       "source": "/css/(.*)\\.css",
