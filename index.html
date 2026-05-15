@@ -1,52 +1,49 @@
 <!DOCTYPE html>
-<!--
-  AgentFlow — Copyright (c) 2026 Omry Damari / Visigence.
-  Proprietary and confidential. All rights reserved.
--->
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta http-equiv="Content-Security-Policy"
-        content="
-          default-src 'none';
-          script-src 'self';
-          style-src 'self';
-          img-src 'self' data:;
-          font-src 'self' data:;
-          connect-src 'none';
-          media-src 'none';
-          object-src 'none';
-          frame-src 'none';
-          child-src 'none';
-          worker-src 'none';
-          manifest-src 'self';
-          base-uri 'none';
-          form-action 'none';
-          frame-ancestors 'none';
-          upgrade-insecure-requests;
-          block-all-mixed-content">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#02040a">
+  <meta name="color-scheme" content="dark">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="no-referrer">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#07080d">
-  <title>AgentFlow</title>
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-  <link rel="stylesheet" href="css/styles.css"/>
-</head>
-<body>
-  <div id="app"></div>
-  <noscript><div style="padding:24px;color:#ecf0fb;font-family:system-ui">This app requires JavaScript.</div></noscript>
+  <meta name="description" content="Omry Damari — AI Engineering &amp; ML Research Studio. Anomaly detection, reasoning engines, agent observability.">
+  <title>Omry Damari — Visigence Studio</title>
+  
+  <!-- Favicons and assets (allowed by img-src 'self' data:) -->
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="canonical" href="https://visigence.co/">
 
-  <script src="js/constants.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/state.js"></script>
-  <script src="js/layout.js"></script>
-  <script src="js/adapters.js"></script>
-  <script src="js/render.js"></script>
-  <script src="js/events.js"></script>
-  <script src="js/main.js"></script>
+  <!-- External stylesheet (allowed by style-src 'self') -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+  <!-- Main application container -->
+  <div id="app"></div>
+
+  <!-- Noscript fallback (style moved to /css/styles.css) -->
+  <noscript>
+    <div class="js-required">
+      This app requires JavaScript to run.<br>
+      Please enable JavaScript in your browser.
+    </div>
+  </noscript>
+
+  <!-- All JavaScript modules (allowed by script-src 'self') -->
+  <script src="/js/utils.js"></script>
+  <script src="/js/constants.js"></script>
+  <script src="/js/data.js"></script>
+  <script src="/js/adapters.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/state.js"></script>
+  <script src="/js/graph.js"></script>
+  <script src="/js/facts.js"></script>
+  <script src="/js/explain.js"></script>
+  <script src="/js/revision.js"></script>
+  <script src="/js/counterfactual.js"></script>
+  <script src="/js/render.js"></script>
+  <script src="/js/events.js"></script>
+  <script src="/js/main.js"></script>
 </body>
 </html>
