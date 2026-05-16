@@ -2,7 +2,7 @@
 # AgentFlow
 
 [![Live](https://img.shields.io/badge/live-visigence.app-00e5ff?style=flat)](https://visigence.app)
-[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=agentflow.garden&followRedirects=on)
+[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=visigence.app&followRedirects=on)
 [![Tests](https://img.shields.io/badge/tests-260%20passing-brightgreen?style=flat)](https://github.com/VisigenceStudio/Agent-Flow/actions/workflows/test.yml)
 
 
@@ -48,7 +48,7 @@ constants.js
 ```
 
 ---
-
+![AgentFlow](docs/visiapp.png) | 
 ## Security
 
 All headers enforced at the edge via `vercel.json`. No server-side runtime.
@@ -65,7 +65,7 @@ All headers enforced at the edge via `vercel.json`. No server-side runtime.
 | `X-Content-Type-Options` | `nosniff` |
 | `Permissions-Policy` | all APIs denied |
 
-SecurityHeaders grade: **A+ (135/100)**
+SecurityHeaders grade: **A+ (135 out of 100) 35 bonus points**
 
 ---
 
