@@ -16,30 +16,31 @@ button, input, textarea, select { font: inherit; color: inherit; }
 :root {
   color-scheme: dark;
 
-  --bg-0: #07080d;
-  --bg-1: #0b0d15;
-  --bg-2: #0f1220;
+  --bg-0: #0a0a0c;
+  --bg-1: #111113;
+  --bg-2: #1a1a1f;
 
-  --hair:   rgba(255,255,255,.08);
-  --hair-2: rgba(255,255,255,.14);
-  --hair-3: rgba(255,255,255,.22);
+  --hair:   rgba(255,255,255,.09);
+  --hair-2: rgba(255,255,255,.16);
+  --hair-3: rgba(255,255,255,.26);
 
-  --text:   #ecf0fb;
-  --text-2: #9aa3c0;
-  --text-3: #5b6585;
+  --text:   #f8f4eb;
+  --text-2: #d4c9b8;
+  --text-3: #8a7f6b;
 
-  --accent:      #7c9cff;
-  --accent-2:    #a6b8ff;
-  --accent-glow: rgba(124,156,255,.35);
-  --accent-dim:  rgba(124,156,255,.14);
+  /* === GOLD ACCENT === */
+  --accent:      #f5d06a;
+  --accent-2:    #ffe8a3;
+  --accent-glow: rgba(245,208,106,.55);
+  --accent-dim:  rgba(245,208,106,.18);
 
-  --danger:  #ff7a85;
-  --success: #5ee1a1;
-  --warn:    #fbbf24;
+  --danger:  #ff8a7a;
+  --success: #6be8a8;
+  --warn:    #ffcc5c;
 
   --role-input:      #ff9f45;
   --role-retrieve:   #22d3ee;
-  --role-plan:       #a78bfa;
+  --role-plan:       #c084fc;
   --role-tool:       #f472b6;
   --role-synthesize: #34d399;
   --role-validate:   #fbbf24;
@@ -80,9 +81,9 @@ html, body {
 }
 body {
   background:
-    radial-gradient(1200px 800px at 10% -10%, rgba(124,156,255,.10), transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, rgba(236,72,153,.06), transparent 55%),
-    radial-gradient(1000px 800px at 50% 120%, rgba(52,211,153,.05), transparent 60%),
+    radial-gradient(1400px 900px at 15% -20%, rgba(245,208,106,.18), transparent 50%),
+    radial-gradient(1100px 800px at 85% 15%, rgba(255,230,140,.12), transparent 60%),
+    radial-gradient(1300px 900px at 40% 110%, rgba(245,208,106,.08), transparent 65%),
     var(--bg-0);
   background-attachment: fixed;
 }
@@ -95,7 +96,7 @@ body {
 #header {
   display: flex; align-items: center; gap: 12px;
   padding: 0 16px; height: 52px; flex-shrink: 0;
-  background: linear-gradient(180deg, rgba(20,24,38,.78), rgba(16,18,30,.68));
+  background: linear-gradient(180deg, rgba(26,26,31,.88), rgba(17,17,20,.82));
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--hair);
@@ -110,6 +111,7 @@ body {
   display: flex; align-items: center; gap: 10px;
   font-family: var(--font-display); font-weight: 700;
   font-size: 15px; letter-spacing: -.02em;
+  color: var(--accent-2);
 }
 #header .logo svg { flex-shrink: 0; filter: drop-shadow(0 0 12px var(--accent-glow)); }
 #header .tagline { font-size: 11px; color: var(--text-3); margin-left: 6px; letter-spacing: .01em; }
@@ -134,13 +136,13 @@ body {
 .btn svg { flex-shrink: 0; }
 
 .btn.primary {
-  background: linear-gradient(180deg, #8fa8ff, #5f7ef5);
+  background: linear-gradient(180deg, #f5d06a, #e8b923);
   color: #0b0d15; font-weight: 600;
   border-color: rgba(255,255,255,.2);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 6px 16px -6px var(--accent-glow), 0 2px 4px rgba(0,0,0,.3);
 }
 .btn.primary:hover {
-  background: linear-gradient(180deg, #a4b8ff, #7491ff);
+  background: linear-gradient(180deg, #ffe8a3, #f5d06a);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 8px 20px -6px var(--accent-glow), 0 2px 6px rgba(0,0,0,.35);
 }
 
@@ -181,9 +183,9 @@ body {
 }
 .run-item:hover { background: rgba(255,255,255,.04); border-color: var(--hair); }
 .run-item.active {
-  background: linear-gradient(180deg, rgba(124,156,255,.18), rgba(124,156,255,.08));
-  border-color: rgba(124,156,255,.35);
-  box-shadow: 0 0 0 1px rgba(124,156,255,.15), 0 6px 16px -8px var(--accent-glow);
+  background: linear-gradient(180deg, rgba(245,208,106,.18), rgba(245,208,106,.08));
+  border-color: rgba(245,208,106,.35);
+  box-shadow: 0 0 0 1px rgba(245,208,106,.15), 0 6px 16px -8px var(--accent-glow);
 }
 .run-item.active::before {
   content: ''; position: absolute; left: -8px; top: 50%;
@@ -261,10 +263,10 @@ body {
 #cf-badge {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 10px; padding: 4px 9px; border-radius: 10px;
-  background: linear-gradient(180deg, rgba(124,156,255,.22), rgba(124,156,255,.12));
+  background: linear-gradient(180deg, rgba(245,208,106,.22), rgba(245,208,106,.12));
   color: var(--accent-2); font-weight: 600;
   letter-spacing: .02em;
-  border: 1px solid rgba(124,156,255,.35);
+  border: 1px solid rgba(245,208,106,.35);
   box-shadow: 0 0 12px -2px var(--accent-glow);
 }
 
@@ -286,8 +288,8 @@ body {
 #graph-scroll {
   flex: 1; overflow: auto; position: relative;
   background:
-    radial-gradient(circle at 20% 30%, rgba(124,156,255,.03), transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(244,114,182,.03), transparent 50%);
+    radial-gradient(circle at 20% 30%, rgba(245,208,106,.03), transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(245,208,106,.03), transparent 50%);
 }
 #graph-scroll::before {
   content: ''; position: absolute; inset: 0;
@@ -307,7 +309,7 @@ body {
   width: 220px;
   border-radius: var(--r-md);
   border: 1px solid var(--hair-2);
-  background: linear-gradient(180deg, rgba(38,44,64,.98), rgba(24,28,44,.98));
+  background: linear-gradient(180deg, rgba(42,38,28,.98), rgba(26,24,18,.98));
   cursor: pointer; position: relative; overflow: hidden;
   box-shadow: var(--sh-2);
   transition: box-shadow var(--t-med) var(--ease-out),
@@ -323,7 +325,7 @@ body {
 .node.selected { border-color: var(--accent) !important; box-shadow: var(--sh-accent); }
 .node.cf-override {
   border-style: dashed !important;
-  background: linear-gradient(180deg, rgba(124,156,255,.18), rgba(40,46,70,.98));
+  background: linear-gradient(180deg, rgba(245,208,106,.18), rgba(40,46,70,.98));
 }
 
 .node-header {
@@ -405,8 +407,8 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
 
 .cf-note {
   display: flex; align-items: flex-start; gap: 10px;
-  background: linear-gradient(180deg, rgba(124,156,255,.14), rgba(124,156,255,.06));
-  border: 1px solid rgba(124,156,255,.3);
+  background: linear-gradient(180deg, rgba(245,208,106,.14), rgba(245,208,106,.06));
+  border: 1px solid rgba(245,208,106,.3);
   border-radius: var(--r-sm);
   padding: 11px 12px;
   font-size: 11.5px; color: var(--accent-2); line-height: 1.55;
@@ -466,9 +468,9 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
   letter-spacing: -.005em;
 }
 .answer-box.cf {
-  border-color: rgba(124,156,255,.35);
-  background: linear-gradient(180deg, rgba(124,156,255,.08), rgba(124,156,255,.03));
-  box-shadow: inset 0 1px 0 rgba(124,156,255,.1);
+  border-color: rgba(245,208,106,.35);
+  background: linear-gradient(180deg, rgba(245,208,106,.08), rgba(245,208,106,.03));
+  box-shadow: inset 0 1px 0 rgba(245,208,106,.1);
 }
 
 /* ── Empty state ───────────────────────────────────── */
@@ -500,7 +502,7 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
 .cf-card:hover { border-color: var(--hair-3); transform: translateY(-1px); box-shadow: var(--sh-3); }
 .cf-card.active {
   border-color: var(--accent);
-  background: linear-gradient(180deg, rgba(124,156,255,.14), rgba(124,156,255,.06));
+  background: linear-gradient(180deg, rgba(245,208,106,.14), rgba(245,208,106,.06));
   box-shadow: 0 0 0 1px var(--accent-dim), 0 12px 32px -8px var(--accent-glow);
 }
 .cf-card-title { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; letter-spacing: -.01em; }
