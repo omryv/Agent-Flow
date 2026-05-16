@@ -1,13 +1,6 @@
 
-# AgentFlow
-
-[![Live](https://img.shields.io/badge/live-visigence.app-00e5ff?style=flat)](https://visigence.app)
-[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=visigence.app&followRedirects=on)
-[![Tests](https://img.shields.io/badge/tests-260%20passing-brightgreen?style=flat)](https://github.com/VisigenceStudio/Agent-Flow/actions/workflows/test.yml)
-
-
-A read-only counterfactual inspector for LLM agent execution traces.
-
+# AgentFlow [![Live](https://img.shields.io/badge/live-visigence.app-00e5ff?style=flat)](https://visigence.app)
+## A read-only counterfactual inspector for LLM agent execution traces
 Imports from LangSmith, LangFuse, W&B Weave, or native `.agentflow.json` files.
 Renders agent execution as an interactive DAG. Toggle between the original run
 and embedded counterfactual scenarios to see exactly which nodes changed, how
@@ -34,7 +27,8 @@ affected node and the final output delta.
 
 Strict dependency hierarchy. Each module may only reference names introduced
 by files above it in the chain. No circular dependencies.
-
+[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=visigence.app&followRedirects=on)
+[![Tests](https://img.shields.io/badge/tests-260%20passing-brightgreen?style=flat)](https://github.com/VisigenceStudio/Agent-Flow/actions/workflows/test.yml)
 ```text
 constants.js
     └─▶ utils.js
