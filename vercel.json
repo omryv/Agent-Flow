@@ -1,7 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "bash build-sri.sh",
-  "outputDirectory": "public",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
