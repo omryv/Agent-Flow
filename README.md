@@ -1,45 +1,39 @@
+
 # AgentFlow
-[![Live](https://img.shields.io/badge/live-trace.observer-5f7ef5)](https://trace.observer)
-[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=trace.observer&followRedirects=on)
-[![Verified Tests](https://img.shields.io/badge/verified-260%20unit%20tests-brightgreen)](https://github.com/Visigence/Agent-Flow/actions/workflows/test.yml)
 
-> 260 unit tests covering adapter functions (LangSmith, LangFuse, W&B Weave),
-> trace ingestion, layout calculations, state transitions, and schema validation.
-> **A read-only counterfactual inspector for LLM agent execution traces.**
-
-AgentFlow imports traces from LangSmith, LangFuse, W&B Weave, or native `.agentflow.json` files and renders agent execution as an interactive directed acyclic graph. Toggle between the original run and embedded counterfactual scenarios to see exactly which nodes changed, how metrics shifted, and what the final answer would have been.
+[![Live](https://img.shields.io/badge/live-visigence.app-00e5ff?style=flat)](https://visigence.app)
+[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=agentflow.garden&followRedirects=on)
+[![Tests](https://img.shields.io/badge/tests-260%20passing-brightgreen?style=flat)](https://github.com/VisigenceStudio/Agent-Flow/actions/workflows/test.yml)
 
 
-<p align="center">
-  <a href="#preview">Preview</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#security">Security</a> •
-  <a href="#release-status">Release Status</a> •
-  <a href="./LICENSE">License</a>
-</p>
+A read-only counterfactual inspector for LLM agent execution traces.
+
+Imports from LangSmith, LangFuse, W&B Weave, or native `.agentflow.json` files.
+Renders agent execution as an interactive DAG. Toggle between the original run
+and embedded counterfactual scenarios to see exactly which nodes changed, how
+metrics shifted, and what the final answer would have been — entirely offline,
+zero backend, nothing sent over the network.
 
 ---
 
-## Preview
+## What It Does
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="./docs/8.png" alt="AgentFlow trace graph view" width="80%"><br>
-      <sub><b>Trace Graph View</b><br>Interactive DAG of agent execution</sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="./docs/10.png" alt="AgentFlow metrics and final answer preview" width="80%"><br>
-      <sub><b>Metrics & Final Answer</b><br>Counterfactual diff and outcome comparison</sub>
-    </td>
-  </tr>
-</table>
+Load a trace → see the full decision graph → ask "what if this node had succeeded?"
+→ watch the counterfactual materialize in place alongside a live diff of every
+affected node and the final output delta.
+
+- 7 platform adapters (LangSmith, LangFuse, W&B Weave + 4 native variants)
+- Interactive DAG with counterfactual overlay
+- Metrics bar: total time, tokens, node count, success rate — with deltas
+- Detail panel: per-node inspection, content, status, duration
+- All computation runs in the browser. API keys parsed locally, never transmitted.
 
 ---
 
 ## Architecture
 
-Modules follow a strict dependency hierarchy. Each file may only reference names introduced by files above it in the chain. **No circular dependencies.**
+Strict dependency hierarchy. Each module may only reference names introduced
+by files above it in the chain. No circular dependencies.
 
 ```text
 constants.js
@@ -57,84 +51,42 @@ constants.js
 
 ## Security
 
-Validated against static bundle scanning, header configuration, and transport-layer integrity benchmarks.
+All headers enforced at the edge via `vercel.json`. No server-side runtime.
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="./docs/1.png" alt="SecurityHeaders A+" width="100%"><br>
-      <sub><b>SecurityHeaders: A+</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="./docs/2.png" alt="Platform scan" width="100%"><br>
-      <sub><b>Platform Scan Overview</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="./docs/3.png" alt="Infrastructure validation" width="100%"><br>
-      <sub><b>Infrastructure Validation</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="./docs/6.png" alt="Bundle secret scan" width="100%"><br>
-      <sub><b>Bundle Secret Scan: Clean</b></sub>
-    </td>
-  </tr>
-</table>
+| Header | Value |
+|---|---|
+| `Content-Security-Policy` | `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
+| `Cross-Origin-Embedder-Policy` | `require-corp` |
+| `Cross-Origin-Opener-Policy` | `same-origin` |
+| `Cross-Origin-Resource-Policy` | `same-origin` |
+| `X-Frame-Options` | `DENY` |
+| `Referrer-Policy` | `no-referrer` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Permissions-Policy` | all APIs denied |
+
+SecurityHeaders grade: **A+ (135/100)**
 
 ---
 
 ## Release Status
 
-> All known release blockers resolved. Application has passed static deployment validation, security-header validation, canonical redirect checks, TLS verification, and bundle secret scanning.
-
-### Asset & Configuration Integrity
-
 | Check | Status |
 |---|---|
-| `assets/favicon.png` present and referenced via `<link rel="icon">` | ✅ |
-| CSP `<meta>` directive matches deployed HTTP header | ✅ |
-| Internal project/source files return `404` | ✅ |
+| Static deployment validation | ✅ |
+| Security-header validation | ✅ |
+| Canonical redirect checks | ✅ |
+| TLS certificate (apex + www) | ✅ |
+| Bundle secret scan | ✅ Clean |
+| Internal source files return 404 | ✅ |
+| CSP meta matches deployed HTTP header | ✅ |
 
-### Transport & Canonicalization
+---
 
-| Check | Status |
-|---|---|
-| SecurityHeaders grade for `https://www.trace.observer/` | **A+** |
-| Apex redirects to `https://www.trace.observer/` | ✅ |
-| Path preservation on redirect (e.g. `/js/main.js`) | ✅ |
-| Final canonical responses return `200` | ✅ |
-| TLS certificate valid for apex and `www` hostnames | ✅ |
+## Test Suite
 
-### Bundle Secret Scan
-
-Static scan found no API keys, secrets, passwords, bearer tokens, or authorization credentials. Only non-sensitive matches surfaced (e.g. `token_usage`).
-
-### Required Security Headers
-
-<table>
-  <tr>
-    <td>
-
-- `Content-Security-Policy`
-- `Permissions-Policy`
-- `Referrer-Policy`
-- `Strict-Transport-Security`
-- `X-Content-Type-Options`
-
-    </td>
-    <td>
-
-- `X-Frame-Options`
-- `Cross-Origin-Opener-Policy`
-- `Cross-Origin-Resource-Policy`
-- `Cross-Origin-Embedder-Policy`
-
-    </td>
-  </tr>
-</table>
-
-### Test Suite
+260 unit tests covering adapter functions, trace ingestion, layout calculations,
+state transitions, and schema validation.
 
 ```bash
 npm test
@@ -143,10 +95,24 @@ npm test
 
 ---
 
+## Stack
+
+- Vanilla JS — no framework, no bundler, no build step
+- Single `public/` directory served as static files
+- Deployed on Vercel with hardened headers
+- Favicon: SVG, no PNG assets in repository
+
+---
+
 <p align="center">
   <sub>
-    Copyright © 2026 <b>Omry Damari — Visigence</b>. All rights reserved.<br>
+    Copyright © 2026 <b>Omry Damari — Visigence Studio</b>. All rights reserved.<br>
     Proprietary and confidential. See <a href="./LICENSE">LICENSE</a> for terms.<br>
     Security disclosures: <a href="./SECURITY.md">SECURITY.md</a>
   </sub>
 </p>
+EOF
+
+git add README.md
+git commit -m "docs: rewrite README, remove image refs, update to v1.2.0 state"
+git push
