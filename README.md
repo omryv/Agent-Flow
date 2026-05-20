@@ -36,7 +36,7 @@ utils.js
                                                                                           └─▶ render.js
                                                                                                 └─▶ events.js
                                                                                                       └─▶ main.js
-### Core Modules
+
 ```
 | File | Responsibility |
 |---|---|
