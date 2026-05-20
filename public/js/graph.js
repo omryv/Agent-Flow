@@ -1,8 +1,7 @@
-
 // Graph operations: reachability, path finding, entailment closure.
 // Mirrors logic_engine/graph.py.
 
-export function buildAdjacency(facts) {
+function buildAdjacency(facts) {
   const adj = new Map();
   for (const fact of facts.values()) {
     if (!adj.has(fact.source)) adj.set(fact.source, new Set());
@@ -12,7 +11,7 @@ export function buildAdjacency(facts) {
   return adj;
 }
 
-export function reachableFrom(adj, start) {
+function reachableFrom(adj, start) {
   const visited = new Set();
   const stack = [start];
   while (stack.length > 0) {
@@ -29,13 +28,13 @@ export function reachableFrom(adj, start) {
   return visited;
 }
 
-export function isReachable(facts, source, target) {
+function isReachable(facts, source, target) {
   if (source === target) return true;
   const adj = buildAdjacency(facts);
   return reachableFrom(adj, source).has(target);
 }
 
-export function findPath(facts, source, target) {
+function findPath(facts, source, target) {
   if (source === target) return [source];
   const adj = buildAdjacency(facts);
   const parent = new Map();
@@ -65,23 +64,23 @@ export function findPath(facts, source, target) {
 }
 
 // Returns a Set of canonical entailment keys, "source>target".
-export function computeClosure(facts, universe = null) {
+function computeClosure(facts, universe) {
   const adj = buildAdjacency(facts);
   const nodes = new Set(adj.keys());
-  if (universe !== null) {
+  if (universe != null) {
     for (const node of universe) nodes.add(node);
   }
   const entailments = new Set();
   for (const start of nodes) {
-    entailments.add(`${start}>${start}`);
+    entailments.add(start + '>' + start);
     for (const reached of reachableFrom(adj, start)) {
-      entailments.add(`${start}>${reached}`);
+      entailments.add(start + '>' + reached);
     }
   }
   return entailments;
 }
 
-export function edgesOnPaths(facts, source, target) {
+function edgesOnPaths(facts, source, target) {
   const adj = buildAdjacency(facts);
   const radj = new Map();
   for (const fact of facts.values()) {
@@ -106,7 +105,7 @@ export function edgesOnPaths(facts, source, target) {
   return result;
 }
 
-export function setDifference(a, b) {
+function setDifference(a, b) {
   const out = new Set();
   for (const v of a) {
     if (!b.has(v)) out.add(v);
