@@ -1,24 +1,14 @@
 // Minimum belief revision: smallest edits to flip a query's truth value.
 // Mirrors logic_engine/revision.py including Pareto frontier filtering.
 
-import { Fact, factSetUnion, factSetDifference } from "./facts.js";
-import { computeClosure, edgesOnPaths, setDifference } from "./graph.js";
-
-export class Revision {
-  constructor({
-    editsRemoved,
-    editsAdded,
-    entailmentsLost,
-    entailmentsGained,
-    targetQuery,
-    targetTruth,
-  }) {
-    this.editsRemoved = editsRemoved;
-    this.editsAdded = editsAdded;
-    this.entailmentsLost = entailmentsLost;
-    this.entailmentsGained = entailmentsGained;
-    this.targetQuery = targetQuery;
-    this.targetTruth = targetTruth;
+class Revision {
+  constructor(opts) {
+    this.editsRemoved = opts.editsRemoved;
+    this.editsAdded = opts.editsAdded;
+    this.entailmentsLost = opts.entailmentsLost;
+    this.entailmentsGained = opts.entailmentsGained;
+    this.targetQuery = opts.targetQuery;
+    this.targetTruth = opts.targetTruth;
     Object.freeze(this);
   }
 
@@ -46,9 +36,9 @@ function universe(facts, query) {
 function* combinations(array, size) {
   const n = array.length;
   if (size > n || size < 0) return;
-  const indices = Array.from({ length: size }, (_, i) => i);
+  const indices = Array.from({ length: size }, function(_, i) { return i; });
   while (true) {
-    yield indices.map((i) => array[i]);
+    yield indices.map(function(i) { return array[i]; });
     let i = size - 1;
     while (i >= 0 && indices[i] === i + n - size) i--;
     if (i < 0) return;
@@ -57,10 +47,11 @@ function* combinations(array, size) {
   }
 }
 
-export function reviseToFalsify(facts, query, maxEdits = 4) {
+function reviseToFalsify(facts, query, maxEdits) {
+  if (maxEdits === undefined) maxEdits = 4;
   const u = universe(facts, query);
   const original = computeClosure(facts, u);
-  const targetKey = `${query.source}>${query.target}`;
+  const targetKey = query.source + '>' + query.target;
   if (!original.has(targetKey)) return [];
 
   const relevantMap = edgesOnPaths(facts, query.source, query.target);
@@ -85,7 +76,7 @@ export function reviseToFalsify(facts, query, maxEdits = 4) {
             entailmentsGained: new Set(),
             targetQuery: query,
             targetTruth: false,
-          }),
+          })
         );
         if (foundAtSize === null) foundAtSize = size;
       }
@@ -95,15 +86,12 @@ export function reviseToFalsify(facts, query, maxEdits = 4) {
   return paretoFilter(sortRevisions(revisions));
 }
 
-export function reviseToSatisfy(
-  facts,
-  query,
-  candidateNodes = null,
-  maxEdits = 3,
-) {
+function reviseToSatisfy(facts, query, candidateNodes, maxEdits) {
+  if (candidateNodes === undefined) candidateNodes = null;
+  if (maxEdits === undefined) maxEdits = 3;
   const u = universe(facts, query);
   const original = computeClosure(facts, u);
-  const targetKey = `${query.source}>${query.target}`;
+  const targetKey = query.source + '>' + query.target;
   if (original.has(targetKey)) return [];
 
   const candidates = [];
@@ -136,7 +124,7 @@ export function reviseToSatisfy(
             entailmentsGained: gained,
             targetQuery: query,
             targetTruth: true,
-          }),
+          })
         );
         if (foundAtSize === null) foundAtSize = size;
       }
@@ -147,7 +135,7 @@ export function reviseToSatisfy(
 }
 
 function sortRevisions(revisions) {
-  return [...revisions].sort((a, b) => {
+  return revisions.slice().sort(function(a, b) {
     if (a.cost !== b.cost) return a.cost - b.cost;
     return a.collateral - b.collateral;
   });
@@ -171,4 +159,40 @@ function paretoFilter(revisions) {
     if (!dominated) keep.push(r);
   }
   return keep;
+}
+
+// ── Logic Engine bootstrap ────────────────────────────────────────────────────
+//
+// Expose the primitives that counterfactual.js reads via window.LogicEngine.
+// This block executes after graph.js, facts.js, and explain.js have already
+// registered their globals, so all referenced names are guaranteed to exist.
+
+if (typeof window !== 'undefined') {
+  window.LogicEngine = {
+    // Facts / queries
+    Fact:             Fact,
+    Query:            Query,
+    parseFacts:       parseFacts,
+    factSetUnion:     factSetUnion,
+    factSetDifference: factSetDifference,
+    factSetEquals:    factSetEquals,
+
+    // Graph
+    buildAdjacency:   buildAdjacency,
+    reachableFrom:    reachableFrom,
+    isReachable:      isReachable,
+    findPath:         findPath,
+    computeClosure:   computeClosure,
+    edgesOnPaths:     edgesOnPaths,
+    setDifference:    setDifference,
+
+    // Revision
+    Revision:         Revision,
+    reviseToFalsify:  reviseToFalsify,
+    reviseToSatisfy:  reviseToSatisfy,
+
+    // Explain
+    explainRevision:  explainRevision,
+    explainAll:       explainAll,
+  };
 }
