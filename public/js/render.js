@@ -36,12 +36,6 @@ function applyDynamicStyles() {
   });
 }
 
-  document.querySelectorAll('[data-color]').forEach(function (el) {
-    var prop = el.dataset.colorprop || 'background';
-    el.style[prop] = el.dataset.color;
-  });
-}
-
 /* ── Render entry point ── */
 
 const _render = function render() {
