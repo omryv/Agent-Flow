@@ -11,7 +11,7 @@ function linearRun() {
   return {
     id: 'run-linear',
     name: 'Linear Run',
-    createdAt: '2025-01-01T00:00:00Z',
+    createdAt: '2026-01-01T00:00:00Z',
     nodes: [
       { id: 'n1', name: 'User Query',       content: 'query',     role: 'input',      status: 'success' },
       { id: 'n2', name: 'Retrieve Docs',    content: 'docs',      role: 'retrieve',   status: 'success' },
@@ -33,7 +33,7 @@ function diamondRun() {
   return {
     id: 'run-diamond',
     name: 'Diamond Run',
-    createdAt: '2025-01-01T00:00:00Z',
+    createdAt: '2026-01-01T00:00:00Z',
     nodes: [
       { id: 'a', name: 'Input',     content: 'q', role: 'input',      status: 'success' },
       { id: 'b', name: 'Path One',  content: 'r', role: 'retrieve',   status: 'success' },
@@ -56,7 +56,7 @@ function singleNodeRun() {
   return {
     id: 'run-single',
     name: 'Single Node',
-    createdAt: '2025-01-01T00:00:00Z',
+    createdAt: '2026-01-01T00:00:00Z',
     nodes: [
       { id: 'only', name: 'Only Node', content: 'alone', role: 'input', status: 'success' },
     ],
@@ -213,7 +213,7 @@ describe('traceToFacts()', () => {
     const run = {
       id: 'run-multi-term',
       name: 'Multi Terminal',
-      createdAt: '2025-01-01T00:00:00Z',
+      createdAt: '2026-01-01T00:00:00Z',
       nodes: [
         { id: 'a', name: 'Root', content: '', role: 'input', status: 'success' },
         { id: 'b', name: 'Leaf1', content: '', role: 'output', status: 'success' },
