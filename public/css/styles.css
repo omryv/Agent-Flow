@@ -324,9 +324,11 @@ kbd {
 #graph-canvas { position: relative; min-width: 100%; }
 
 /* ── Nodes ─────────────────────────────────────────── */
-.node-wrapper { position: absolute; contain: layout style; }
+/* contain: layout style removed — caused height collapse to 0 on position:absolute
+   wrappers in Chromium ≤88 and certain Safari builds, clipping all node content. */
+.node-wrapper { position: absolute; }
 .node {
-  width: 220px; border-radius: var(--r-md); border: 1px solid var(--lineS);
+  width: 220px; min-height: 100px; border-radius: var(--r-md); border: 1px solid var(--lineS);
   background: linear-gradient(160deg,rgba(4,20,24,.97),rgba(2,12,15,.97));
   cursor: pointer; position: relative; overflow: hidden; box-shadow: var(--sh-2);
   transition: box-shadow var(--t-med) var(--ease-out), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
