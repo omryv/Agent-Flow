@@ -1,6 +1,12 @@
+# Agent-Flow
 
-# AgentFlow
+[![Tests](https://img.shields.io/badge/tests-594_passing-brightgreen)](https://github.com/OmryV/Agent-Flow/actions)
+[![Node.js](https://img.shields.io/badge/Node.js-18%20%7C%2020%20%7C%2022-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Latest Verified Run](https://img.shields.io/badge/Latest_Run-ace68e9-success)](https://github.com/OmryV/Agent-Flow/commit/ace68e94a21f294d26aff8fc4eb58236a33fb286)
 
+> **Validated on Node.js 18, 20, and 22**  
+> **GitHub Actions verified on every push and pull request**  
+> **Latest verified run:** [ace68e9](https://github.com/OmryV/Agent-Flow/commit/ace68e94a21f294d26aff8fc4eb58236a33fb286) • [Actions #26160112241](https://github.com/OmryV/Agent-Flow/actions/runs/26160112241)
 AgentFlow is a client-side agent trace visualizer and counterfactual reasoning tool. Import execution traces from LangSmith, LangFuse, or W&B Weave, inspect node-level behavior through a directed graph UI, and explore "what if" scenarios powered by a built-in Logic Engine.
 
 ## Current Architecture
