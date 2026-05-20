@@ -1,112 +1,170 @@
 
-# AgentFlow [![Live](https://img.shields.io/badge/live-visigence.app-00e5ff?style=flat)](https://visigence.app)
-## A read-only counterfactual inspector for LLM agent execution traces
-Imports from LangSmith, LangFuse, W&B Weave, or native `.agentflow.json` files.
-Renders agent execution as an interactive DAG. Toggle between the original run
-and embedded counterfactual scenarios to see exactly which nodes changed, how
-metrics shifted, and what the final answer would have been — entirely offline,
-zero backend, nothing sent over the network.
+# AgentFlow
 
----
-
-## What It Does
-
-Load a trace → see the full decision graph → ask "what if this node had succeeded?"
-→ watch the counterfactual materialize in place alongside a live diff of every
-affected node and the final output delta.
-
-- 7 platform adapters (LangSmith, LangFuse, W&B Weave + 4 native variants)
-- Interactive DAG with counterfactual overlay
-- Metrics bar: total time, tokens, node count, success rate — with deltas
-- Detail panel: per-node inspection, content, status, duration
-- All computation runs in the browser. API keys parsed locally, never transmitted.
-
----
+AgentFlow is a client-side agent trace visualizer and counterfactual reasoning tool. Import execution traces from LangSmith, LangFuse, or W&B Weave, inspect node-level behavior through a directed graph UI, and explore "what if" scenarios powered by a built-in Logic Engine.
 
 ## Architecture
 
-Strict dependency hierarchy. Each module may only reference names introduced
-by files above it in the chain. No circular dependencies.
-[![Security Headers: A+](https://img.shields.io/badge/Security%20Headers-A%2B-brightgreen?style=flat)](https://securityheaders.com/?q=visigence.app&followRedirects=on)
-[![Tests](https://img.shields.io/badge/tests-260%20passing-brightgreen?style=flat)](https://github.com/VisigenceStudio/Agent-Flow/actions/workflows/test.yml)
-```text
-constants.js
-    └─▶ utils.js
-            └─▶ data.js
-                    └─▶ state.js
-                            └─▶ layout.js
-                                    └─▶ adapters.js
-                                            └─▶ render.js
-                                                    └─▶ events.js
-                                                            └─▶ main.js
+```
+utils.js
+  └─▶ constants.js
+        └─▶ data.js
+              └─▶ adapters.js
+                    └─▶ layout.js
+                          └─▶ state.js
+                                └─▶ graph.js
+                                      └─▶ facts.js
+                                            └─▶ explain.js
+                                                  └─▶ revision.js
+                                                        └─▶ counterfactual.js
+                                                              └─▶ render.js
+                                                                    └─▶ events.js
+                                                                          └─▶ main.js
 ```
 
----
-![AgentFlow](docs/visiapp.png) | 
+All scripts load as classic `<script>` tags in dependency order. No bundler, no framework, no build step. `function` declarations hoist to the global scope; `class` and `const` declarations are accessible through the sequential evaluation chain.
+
+### Core Modules
+
+| File | Responsibility |
+|---|---|
+| `utils.js` | HTML escaping (`esc`, `escAttr`), `SafeStore` (localStorage with 4 MB cap), `ErrorBoundary` |
+| `constants.js` | Role/status definitions, SVG icons, `SAFE_ID_RE` |
+| `data.js` | `validateRunSchema` — structural validation for runs, nodes, edges, counterfactuals |
+| `adapters.js` | Import adapters for LangSmith, LangFuse, W&B Weave; role/status inference |
+| `layout.js` | `layoutNodes` — Kahn's algorithm topological sort producing layered x/y positions |
+| `state.js` | Immutable state management, deep cloning, counterfactual materialization |
+| `render.js` | Full HTML string builder for every UI component; `innerHTML` swap per render cycle |
+| `events.js` | Delegated click/change/keydown handling, import/export, keyboard shortcuts |
+| `main.js` | Three-line bootstrap: `ErrorBoundary.install()`, `installDelegation()`, `render()` |
+
+### Logic Engine
+
+| File | Responsibility |
+|---|---|
+| `graph.js` | Adjacency construction, BFS reachability, path finding, transitive closure, edge filtering |
+| `facts.js` | `Fact` and `Query` classes, `parseFacts`, set operations on fact maps |
+| `explain.js` | Human-readable revision explanations with collateral reporting |
+| `revision.js` | Minimum belief revision: `reviseToFalsify`, `reviseToSatisfy`, Pareto frontier filtering. Registers `window.LogicEngine` |
+| `counterfactual.js` | Bridge between Logic Engine and AgentFlow state. Converts traces to fact sets, computes Pareto-optimal counterfactual suggestions, materializes them into the native schema. Registers `window.AgentFlowCounterfactual` |
+
+## Import Formats
+
+AgentFlow accepts `.agentflow.json` natively and auto-detects three third-party formats:
+
+- **LangSmith** — root object has `run_type`; walks `child_runs` recursively
+- **LangFuse** — root object has `observations` array; sorted by `startTime`
+- **W&B Weave** — root object (or first array element) has `op_name`; supports nested `children` and flat `parent_id` layouts
+
+Import via the UI button, `Cmd+I` / `Ctrl+I`, paste JSON, or drag-and-drop. Max 2 MB.
+
+## Counterfactual Reasoning
+
+The Logic Engine converts an agent trace into a directed graph of entailment facts, then computes minimum-cost revisions that would disconnect the source from the final answer. Each revision is a set of edges whose removal breaks reachability — translated into node-level status overrides (failed) in AgentFlow's counterfactual schema.
+
+Suggestions are Pareto-optimal on cost (number of edits) and collateral (unintended entailment changes). The "Compute counterfactuals" button generates up to 6 scenarios across all nodes; selecting a node in the detail panel shows up to 4 targeted suggestions.
+
 ## Security
 
-All headers enforced at the edge via `vercel.json`. No server-side runtime.
+All security headers are configured in `vercel.json`:
 
-| Header | Value |
-|---|---|
-| `Content-Security-Policy` | `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:` |
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
-| `Cross-Origin-Embedder-Policy` | `require-corp` |
-| `Cross-Origin-Opener-Policy` | `same-origin` |
-| `Cross-Origin-Resource-Policy` | `same-origin` |
-| `X-Frame-Options` | `DENY` |
-| `Referrer-Policy` | `no-referrer` |
-| `X-Content-Type-Options` | `nosniff` |
-| `Permissions-Policy` | all APIs denied |
+- `Content-Security-Policy`: `default-src 'none'`; `script-src 'self'`; `style-src 'self' 'unsafe-inline'` (required for data-driven inline positioning); `img-src 'self' data:`
+- `Strict-Transport-Security`: HSTS with 2-year max-age, preload
+- `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`
+- `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`
+- `Permissions-Policy`: all features denied
 
-SecurityHeaders grade: **A+ (135 out of 100) 35 bonus points**
+All user-controlled strings pass through `esc()` (8-char entity encoding) and `escAttr()` (numeric entity encoding) before reaching `innerHTML`. No `eval`, `Function()`, or `document.write`.
 
----
+## Development
 
-## Release Status
+### Prerequisites
 
-| Check | Status |
-|---|---|
-| Static deployment validation | ✅ |
-| Security-header validation | ✅ |
-| Canonical redirect checks | ✅ |
-| TLS certificate (apex + www) | ✅ |
-| Bundle secret scan | ✅ Clean |
-| Internal source files return 404 | ✅ |
-| CSP meta matches deployed HTTP header | ✅ |
+- Node.js 18+
+- npm
 
----
+### Install
 
-## Test Suite
+```bash
+npm install
+```
 
-260 unit tests covering adapter functions, trace ingestion, layout calculations,
-state transitions, and schema validation.
+### Test
 
 ```bash
 npm test
-# ✓ 260 tests passing
 ```
 
----
+524 tests across 10 suites covering data validation, adapters, layout, state management, graph operations, fact parsing, belief revision, explanation generation, and counterfactual integration.
 
-## Stack
+### Test Infrastructure
 
-- Vanilla JS — no framework, no bundler, no build step
-- Single `public/` directory served as static files
-- Deployed on Vercel with hardened headers
-- Favicon: SVG, no PNG assets in repository
+| File | Purpose |
+|---|---|
+| `tests/helpers/loadContext.js` | Concatenates all 11 source files into a single vm sandbox with mocked browser globals. Used by app-layer tests. |
+| `tests/helpers/engine.js` | Concatenates the 4 Logic Engine files into a vm sandbox with shared built-ins. Used by engine-layer tests. |
 
----
+### Deploy
 
-<p align="center">
-  <sub>
-    Copyright © 2026 <b>Omry Damari — Visigence Studio</b>. All rights reserved.<br>
-    Proprietary and confidential. See <a href="./LICENSE">LICENSE</a> for terms.<br>
-    Security disclosures: <a href="./SECURITY.md">SECURITY.md</a>
-  </sub>
-</p>
-EOF
+```bash
+# Vercel (production)
+vercel --prod
 
-git add README.md
-git commit -m "docs: rewrite README, remove image refs, update to v1.2.0 state"
-git push
+# Local preview
+npx serve public
+```
+
+### File Structure
+
+```
+public/
+  index.html
+  css/styles.css
+  js/
+    utils.js
+    constants.js
+    data.js
+    adapters.js
+    layout.js
+    state.js
+    graph.js
+    facts.js
+    explain.js
+    revision.js
+    counterfactual.js
+    render.js
+    events.js
+    main.js
+tests/
+  helpers/
+    loadContext.js
+    engine.js
+  adapters.test.js
+  counterfactual.test.js
+  data-validation.test.js
+  explain.test.js
+  facts.test.js
+  graph.test.js
+  layout.test.js
+  revision.test.js
+  state.test.js
+  utils.test.js
+vercel.json
+```
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|---|---|
+| `/` | Focus search |
+| `G` | Switch to Graph tab |
+| `C` | Switch to Counterfactuals tab |
+| `↑` / `↓` | Cycle runs |
+| `←` / `→` | Cycle nodes |
+| `Cmd+I` | Import |
+| `Cmd+E` | Export |
+| `Esc` | Close modal / deselect node |
+
+## License
+
+Copyright © 2026 Omry Damari - "Visigence Studio"
