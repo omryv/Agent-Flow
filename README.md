@@ -3,29 +3,35 @@
 
 AgentFlow is a client-side agent trace visualizer and counterfactual reasoning tool. Import execution traces from LangSmith, LangFuse, or W&B Weave, inspect node-level behavior through a directed graph UI, and explore "what if" scenarios powered by a built-in Logic Engine.
 
-## Architecture
+## Current Architecture
 
-```
+```text
 utils.js
-  └─▶ constants.js
-        └─▶ data.js
-              └─▶ adapters.js
-                    └─▶ layout.js
-                          └─▶ state.js
-                                └─▶ graph.js
-                                      └─▶ facts.js
-                                            └─▶ explain.js
-                                                  └─▶ revision.js
-                                                        └─▶ counterfactual.js
-                                                              └─▶ render.js
-                                                                    └─▶ events.js
-                                                                          └─▶ main.js
-```
+└─▶ constants.js
+      └─▶ data.js
+            └─▶ adapters.js
+                  └─▶ layout.js
+                        └─▶ state.js
+                              └─▶ graph.js
+                                    └─ graph operations now live
 
-All scripts load as classic `<script>` tags in dependency order. No bundler, no framework, no build step. `function` declarations hoist to the global scope; `class` and `const` declarations are accessible through the sequential evaluation chain.
+                                          └─▶ facts.js
+                                                └─ symbolic fact system now live
 
+                                                      └─▶ explain.js
+                                                            └─ revision explanation engine now live
+
+                                                                  └─▶ revision.js
+                                                                        └─ registers window.LogicEngine
+
+                                                                              └─▶ counterfactual.js
+                                                                                    └─ registers window.AgentFlowCounterfactual
+
+                                                                                          └─▶ render.js
+                                                                                                └─▶ events.js
+                                                                                                      └─▶ main.js
 ### Core Modules
-
+```
 | File | Responsibility |
 |---|---|
 | `utils.js` | HTML escaping (`esc`, `escAttr`), `SafeStore` (localStorage with 4 MB cap), `ErrorBoundary` |
@@ -76,26 +82,9 @@ All security headers are configured in `vercel.json`:
 
 All user-controlled strings pass through `esc()` (8-char entity encoding) and `escAttr()` (numeric entity encoding) before reaching `innerHTML`. No `eval`, `Function()`, or `document.write`.
 
-## Development
 
-### Prerequisites
 
-- Node.js 18+
-- npm
-
-### Install
-
-```bash
-npm install
-```
-
-### Test
-
-```bash
-npm test
-```
-
-524 tests across 10 suites covering data validation, adapters, layout, state management, graph operations, fact parsing, belief revision, explanation generation, and counterfactual integration.
+594 tests across 11 suites covering data validation, adapters, layout, state management, graph operations, fact parsing, belief revision, explanation generation, and counterfactual integration.
 
 ### Test Infrastructure
 
@@ -104,66 +93,7 @@ npm test
 | `tests/helpers/loadContext.js` | Concatenates all 11 source files into a single vm sandbox with mocked browser globals. Used by app-layer tests. |
 | `tests/helpers/engine.js` | Concatenates the 4 Logic Engine files into a vm sandbox with shared built-ins. Used by engine-layer tests. |
 
-### Deploy
 
-```bash
-# Vercel (production)
-vercel --prod
-
-# Local preview
-npx serve public
-```
-
-### File Structure
-
-```
-public/
-  index.html
-  css/styles.css
-  js/
-    utils.js
-    constants.js
-    data.js
-    adapters.js
-    layout.js
-    state.js
-    graph.js
-    facts.js
-    explain.js
-    revision.js
-    counterfactual.js
-    render.js
-    events.js
-    main.js
-tests/
-  helpers/
-    loadContext.js
-    engine.js
-  adapters.test.js
-  counterfactual.test.js
-  data-validation.test.js
-  explain.test.js
-  facts.test.js
-  graph.test.js
-  layout.test.js
-  revision.test.js
-  state.test.js
-  utils.test.js
-vercel.json
-```
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|---|---|
-| `/` | Focus search |
-| `G` | Switch to Graph tab |
-| `C` | Switch to Counterfactuals tab |
-| `↑` / `↓` | Cycle runs |
-| `←` / `→` | Cycle nodes |
-| `Cmd+I` | Import |
-| `Cmd+E` | Export |
-| `Esc` | Close modal / deselect node |
 
 ## License
 
