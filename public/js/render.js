@@ -25,12 +25,16 @@ function applyDynamicStyles() {
     el.style.top     = el.dataset.y + 'px';
     el.style.opacity = el.dataset.opacity || '';
   });
-
   var canvas = document.getElementById('graph-canvas');
   if (canvas) {
-    el.style.width  = canvas.dataset.w + 'px';
-    el.style.height = canvas.dataset.h + 'px';
+    canvas.style.width  = canvas.dataset.w + 'px';
+    canvas.style.height = canvas.dataset.h + 'px';
   }
+  document.querySelectorAll('[data-color]').forEach(function (el) {
+    var prop = el.dataset.colorprop || 'background';
+    el.style[prop] = el.dataset.color;
+  });
+}
 
   document.querySelectorAll('[data-color]').forEach(function (el) {
     var prop = el.dataset.colorprop || 'background';
