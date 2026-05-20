@@ -104,6 +104,9 @@ body {
   background-attachment: fixed;
 }
 
+/* ── Utility ───────────────────────────────────────── */
+.spacer { flex: 1; }
+
 /* ── Shell ─────────────────────────────────────────── */
 #app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 #main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
@@ -131,7 +134,6 @@ body {
   font-size: 11px; color: var(--ink3); margin-left: 4px;
   font-family: var(--ff-b); font-weight: 400; letter-spacing: .01em;
 }
-#header .spacer { flex: 1; }
 #header .nav-sep { width: 1px; height: 20px; background: var(--line); margin: 0 2px; }
 
 /* ── Buttons ───────────────────────────────────────── */
@@ -234,6 +236,7 @@ kbd {
 
 /* ── Canvas area ───────────────────────────────────── */
 #canvas-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.canvas-area-empty { display: flex; flex: 1; flex-direction: column; }
 
 #toolbar {
   display: flex; align-items: center; gap: 8px;
@@ -262,6 +265,11 @@ kbd {
 }
 .tab.active[data-id="counterfactuals"] { color: var(--gold); }
 
+.cf-tab-count {
+  font-size: 10px; color: var(--ink3); margin-left: 3px;
+  font-family: var(--ff-m); font-variant-numeric: tabular-nums;
+}
+
 .cf-selector { display: flex; align-items: center; gap: 6px; }
 .cf-selector label { font-family: var(--ff-m); font-size: 10px; color: var(--ink3); }
 .cf-selector select {
@@ -286,6 +294,7 @@ kbd {
 .logic-engine-btn:hover {
   background: rgba(192,132,252,.18); border-color: rgba(192,132,252,.45); color: #d4b4fe;
 }
+.logic-engine-label { font-size: 11px; letter-spacing: .02em; }
 
 /* ── Breadcrumb ─────────────────────────────────────────────── */
 #run-breadcrumb {
@@ -324,8 +333,6 @@ kbd {
 #graph-canvas { position: relative; min-width: 100%; }
 
 /* ── Nodes ─────────────────────────────────────────── */
-/* contain: layout style removed — caused height collapse to 0 on position:absolute
-   wrappers in Chromium ≤88 and certain Safari builds, clipping all node content. */
 .node-wrapper { position: absolute; }
 .node {
   width: 220px; min-height: 100px; border-radius: var(--r-md); border: 1px solid var(--lineS);
@@ -394,6 +401,7 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
 .detail-empty-state .kbd-tip { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 .detail-empty-state .kbd-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--ink3); gap: 8px; }
 .detail-empty-state .kbd-row span { text-align: right; }
+.detail-icon-dim { opacity: .35; margin-bottom: 12px; }
 
 .detail-section { margin-bottom: 20px; }
 .detail-section h3 {
@@ -403,11 +411,17 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
 .detail-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 7px; font-size: 12px; }
 .detail-row .label { color: var(--ink3); min-width: 76px; flex-shrink: 0; font-weight: 500; }
 .detail-row .value { color: var(--ink1); word-break: break-word; }
+.status-inline { display: flex; align-items: center; gap: 6px; }
+.detail-node-id {
+  color: var(--ink3); font-family: var(--ff-m); font-size: 11px;
+  font-variant-numeric: tabular-nums; word-break: break-all;
+}
 .detail-content-box {
   background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: var(--r-sm);
   padding: 11px 13px; font-size: 11.5px; line-height: 1.65; color: var(--ink2);
   white-space: pre-wrap; word-break: break-word; max-height: 210px; overflow-y: auto; font-family: var(--ff-m);
 }
+.detail-original-content { opacity: .6; }
 .detail-hint { font-size: 11px; color: var(--ink3); line-height: 1.55; margin-bottom: 10px; }
 
 .cf-note {
@@ -449,6 +463,9 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
 .metric-value {
   font-size: 15px; font-weight: 600; font-family: var(--ff-m); font-variant-numeric: tabular-nums;
 }
+.metric-accent  { color: var(--accent-2); }
+.metric-success { color: var(--success); }
+.metric-danger  { color: var(--danger); }
 .metric-delta { font-size: 10px; font-weight: 700; font-family: var(--ff-m); }
 .metric-delta.pos { color: var(--success); }
 .metric-delta.neg { color: var(--rose); }
@@ -471,6 +488,7 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
   border-color: rgba(0,229,255,.28);
   background: linear-gradient(135deg,rgba(0,229,255,.07),rgba(0,229,255,.02));
 }
+.cf-label { color: var(--accent-2); }
 
 /* ── Empty state ───────────────────────────────────── */
 #empty-state {
@@ -498,6 +516,14 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
 
 /* ── CF tab ────────────────────────────────────────── */
 #cf-list { padding: 16px; display: flex; flex-direction: column; gap: 10px; max-width: 700px; margin: 0 auto; }
+.cf-empty-scroll { display: flex; align-items: center; justify-content: center; }
+.cf-empty-state  { padding: 48px; }
+.cf-empty-title  { margin-top: 16px; font-size: 13px; color: var(--ink2); }
+.cf-empty-sub    { margin-top: 6px; font-size: 12px; color: var(--ink3); }
+.cf-active-label {
+  font-size: 10px; color: var(--gold2); margin-left: auto;
+  font-family: var(--ff-m); font-weight: 600; letter-spacing: .04em;
+}
 .cf-card {
   background: linear-gradient(160deg,rgba(4,20,24,.9),rgba(2,14,18,.95));
   border: 1px solid var(--lineS); border-radius: var(--r-md); padding: 13px 15px;
@@ -616,6 +642,12 @@ svg.edges-layer { position: absolute; top: 0; left: 0; pointer-events: none; ove
   border: 1px solid var(--lineS); border-radius: var(--r-sm); padding: 10px 18px;
   font-size: 12px; color: var(--ink2); box-shadow: var(--sh-3); z-index: 200;
   animation: fadeIn 180ms var(--ease); pointer-events: none;
+}
+
+/* ── Noscript fallback ─────────────────────────────────────── */
+.js-required {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; text-align: center; color: var(--ink3); font-size: 14px; line-height: 1.7;
 }
 
 /* ── Animations ────────────────────────────────────── */
