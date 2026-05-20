@@ -2,7 +2,7 @@
 'use strict';
 
 const NODE_W = 220;
-const NODE_H = 100;
+const NODE_H = 120;
 
 function getPositionsForRun(runId, run) {
   const stored = (state.nodePositions || {})[runId] || {};
@@ -62,6 +62,7 @@ function buildHeader(view) {
     <button class="btn" data-action="openImportDialog" title="Import (⌘I)">${ICONS.import} Import</button>
   </div>`;
 }
+
 function buildSidebar() {
   const runs = state.runs;
   return `
@@ -468,6 +469,4 @@ function buildDetail(view) {
       </div>` : ''}
     </div>
   </div>`;
-
-
 }
