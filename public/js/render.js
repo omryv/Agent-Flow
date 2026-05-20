@@ -1,4 +1,4 @@
-/*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
+/*! AgentFlow — Copyright (c) 2026 Omry Damari - Visigence. Proprietary. */
 'use strict';
 
 const NODE_W = 220;
@@ -17,6 +17,29 @@ function makeEdgePath(fp, tp) {
   return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
 }
 
+/* ── Post-render: apply all dynamic values via DOM API ── */
+
+function applyDynamicStyles() {
+  document.querySelectorAll('[data-x]').forEach(function (el) {
+    el.style.left    = el.dataset.x + 'px';
+    el.style.top     = el.dataset.y + 'px';
+    el.style.opacity = el.dataset.opacity || '';
+  });
+
+  var canvas = document.getElementById('graph-canvas');
+  if (canvas) {
+    el.style.width  = canvas.dataset.w + 'px';
+    el.style.height = canvas.dataset.h + 'px';
+  }
+
+  document.querySelectorAll('[data-color]').forEach(function (el) {
+    var prop = el.dataset.colorprop || 'background';
+    el.style[prop] = el.dataset.color;
+  });
+}
+
+/* ── Render entry point ── */
+
 const _render = function render() {
   var scrollEl = document.getElementById('graph-scroll');
   var savedLeft = scrollEl ? scrollEl.scrollLeft : 0;
@@ -26,6 +49,7 @@ const _render = function render() {
     : null;
 
   document.getElementById('app').innerHTML = buildHTML();
+  applyDynamicStyles();
   attachEvents();
 
   var newScroll = document.getElementById('graph-scroll');
@@ -39,6 +63,8 @@ const _render = function render() {
   }
 };
 const render = ErrorBoundary.wrap(_render, 'render');
+
+/* ── HTML builders ── */
 
 function buildHTML() {
   const view = getActiveRunView();
@@ -69,7 +95,7 @@ function buildSidebar() {
   <div id="sidebar">
     <div id="sidebar-header">
       <h2>Runs</h2>
-      <span style="font-size:11px;color:var(--text-3)">${runs.length} trace${runs.length !== 1 ? 's' : ''}</span>
+      <span class="sidebar-count">${runs.length} trace${runs.length !== 1 ? 's' : ''}</span>
     </div>
     <div id="runs-list" role="listbox">
       ${runs.length === 0 ? `<div class="no-runs-msg">No runs yet.<br>Import one.</div>` : ''}
@@ -95,7 +121,7 @@ function buildRunItem(r) {
 
 function buildCanvasArea(view) {
   if (!view) {
-    return `<div id="canvas-area" style="display:flex;flex:1;flex-direction:column;">
+    return `<div id="canvas-area" class="canvas-area-empty">
       <div id="empty-state">
         ${ICONS.cursor}
         <h2>No run selected</h2>
@@ -116,13 +142,13 @@ function buildCanvasArea(view) {
       <div class="tab-bar">
         <div class="tab ${state.activeTab === 'graph' ? 'active' : ''}" data-action="setTab" data-id="graph" role="tab" aria-selected="${state.activeTab === 'graph'}">Graph</div>
         <div class="tab ${state.activeTab === 'counterfactuals' ? 'active' : ''}" data-action="setTab" data-id="counterfactuals" role="tab" aria-selected="${state.activeTab === 'counterfactuals'}">
-          Counterfactuals <span style="font-size:10px;color:var(--text-3);margin-left:3px">${realCfList.length}</span>
+          Counterfactuals <span class="cf-tab-count">${realCfList.length}</span>
         </div>
       </div>
       <button class="btn logic-engine-btn" data-action="generateCounterfactuals" title="Compute counterfactual scenarios using Logic Engine">
-        <span style="font-size:11px;letter-spacing:0.02em;">Compute counterfactuals</span>
+        <span class="logic-engine-label">Compute counterfactuals</span>
       </button>
-      <div style="flex:1"></div>
+      <div class="spacer"></div>
       ${state.activeTab === 'graph' && view ? `
         <div class="search-box">
           <input
@@ -158,7 +184,7 @@ function buildLegend() {
   return `<div id="legend">
     ${Object.entries(ROLES).map(([k, v]) => `
       <div class="legend-item">
-        <div class="legend-dot" style="background:${v.color}"></div>
+        <div class="legend-dot" data-color="${escAttr(v.color)}"></div>
         <span>${esc(v.label)}</span>
       </div>`).join('')}
   </div>`;
@@ -193,14 +219,15 @@ function buildGraph(view) {
     const statusDef = STATUSES[node.status] || STATUSES.pending;
     const isSelected = state.selectedNodeId === node.id;
     const isCfOverride = overriddenNodeIds.has(node.id);
+    const nodeOpacity = q && !matchingIds.has(node.id) ? '0.2' : '1';
 
     return `
-    <div class="node-wrapper" data-node-id="${escAttr(node.id)}" style="left:${pos.x}px;top:${pos.y}px;opacity:${q && !matchingIds.has(node.id) ? '0.2' : '1'};">
+    <div class="node-wrapper" data-node-id="${escAttr(node.id)}" data-x="${pos.x}" data-y="${pos.y}" data-opacity="${nodeOpacity}">
       <div class="node ${isSelected ? 'selected' : ''} ${isCfOverride ? 'cf-override' : ''}"
            data-action="selectNode" data-id="${escAttr(node.id)}" role="button" tabindex="0" aria-pressed="${isSelected}">
         <div class="node-header">
-          <div class="role-dot" style="background:${role.color}"></div>
-          <span class="role-label" style="color:${role.color}">${esc(role.label)}</span>
+          <div class="role-dot" data-color="${escAttr(role.color)}"></div>
+          <span class="role-label" data-color="${escAttr(role.color)}" data-colorprop="color">${esc(role.label)}</span>
         </div>
         <div class="node-name">${esc(node.name)}</div>
         <div class="node-content">${esc(node.content)}</div>
@@ -223,7 +250,7 @@ function buildGraph(view) {
 
   return `
   <div id="graph-scroll">
-    <div id="graph-canvas" style="width:${cw}px;height:${ch}px;">
+    <div id="graph-canvas" data-w="${cw}" data-h="${ch}">
       <svg class="edges-layer" width="${cw}" height="${ch}">${edgesHTML}</svg>
       ${nodesHTML}
     </div>
@@ -287,11 +314,11 @@ function buildCfTab(view) {
   const originalRun = view.originalRun || view.run;
   const cfs = originalRun.counterfactuals || [];
   if (cfs.length === 0) {
-    return `<div id="graph-scroll" style="display:flex;align-items:center;justify-content:center;">
-      <div class="detail-empty-state" style="padding:48px;">
+    return `<div id="graph-scroll" class="cf-empty-scroll">
+      <div class="detail-empty-state cf-empty-state">
         ${ICONS.cf}
-        <p style="margin-top:16px;font-size:13px;color:var(--text-2);">No counterfactuals yet.</p>
-        <p style="margin-top:6px;font-size:12px;">No counterfactuals in this run.</p>
+        <p class="cf-empty-title">No counterfactuals yet.</p>
+        <p class="cf-empty-sub">No counterfactuals in this run.</p>
       </div>
     </div>`;
   }
@@ -307,7 +334,7 @@ function buildCfTab(view) {
         <div class="cf-card-title">
           ${ICONS.cf}
           ${esc(cf.name)}
-          ${active ? `<span style="font-size:10px;color:var(--accent-2);margin-left:auto">Active</span>` : ''}
+          ${active ? `<span class="cf-active-label">Active</span>` : ''}
         </div>
         <div class="cf-card-desc">${esc(cf.description || '')}</div>
         ${diffSummary}
@@ -341,7 +368,7 @@ function buildMetricsBar(view) {
   <div id="metrics-bar">
     <div class="metric">
       <div class="metric-label">TOTAL TIME</div>
-      <div class="metric-value" style="color:var(--accent-2)">${(m.totalMs|0).toLocaleString()}ms</div>
+      <div class="metric-value metric-accent">${(m.totalMs|0).toLocaleString()}ms</div>
       ${delta('totalMs', 'ms', true)}
     </div>
     <div class="metric-sep"></div>
@@ -358,18 +385,18 @@ function buildMetricsBar(view) {
     <div class="metric-sep"></div>
     <div class="metric">
       <div class="metric-label">SUCCESSFUL</div>
-      <div class="metric-value" style="color:var(--success)">${m.successful|0}</div>
+      <div class="metric-value metric-success">${m.successful|0}</div>
     </div>
     ${m.failed > 0 ? `
     <div class="metric-sep"></div>
     <div class="metric">
       <div class="metric-label">FAILED</div>
-      <div class="metric-value" style="color:var(--danger)">${m.failed|0}</div>
+      <div class="metric-value metric-danger">${m.failed|0}</div>
     </div>` : ''}
-    <div style="flex:1"></div>
+    <div class="spacer"></div>
     ${run.finalAnswer ? `
     <div id="answer-panel">
-      <h3>Final Answer ${isCounterfactual ? '<span style="color:var(--accent-2)">(counterfactual)</span>' : ''}</h3>
+      <h3>Final Answer ${isCounterfactual ? '<span class="cf-label">(counterfactual)</span>' : ''}</h3>
       <div class="answer-box ${isCounterfactual ? 'cf' : ''}">${esc(run.finalAnswer)}</div>
     </div>` : ''}
   </div>`;
@@ -385,7 +412,7 @@ function buildDetail(view) {
   if (!node) {
     return `<div id="detail" class="empty">
       <div class="detail-empty-state">
-        <div style="opacity:.35;margin-bottom:12px;">${ICONS.cursor}</div>
+        <div class="detail-icon-dim">${ICONS.cursor}</div>
         <p>Click a node to inspect it</p>
       </div>
     </div>`;
@@ -433,10 +460,10 @@ function buildDetail(view) {
       <div class="detail-section">
         <h3>Node</h3>
         <div class="detail-row"><span class="label">Name</span><span class="value">${esc(node.name)}</span></div>
-        <div class="detail-row"><span class="label">Role</span><span class="value" style="color:${role.color}">${esc(role.label)}</span></div>
+        <div class="detail-row"><span class="label">Role</span><span class="value" data-color="${escAttr(role.color)}" data-colorprop="color">${esc(role.label)}</span></div>
         <div class="detail-row">
           <span class="label">Status</span>
-          <span class="value" style="display:flex;align-items:center;gap:6px">
+          <span class="value status-inline">
             <span class="status-dot ${statusDef.cls}"></span>${esc(statusDef.label)}
           </span>
         </div>
@@ -444,7 +471,7 @@ function buildDetail(view) {
         <div class="detail-row"><span class="label">Duration</span><span class="value">${Number(node.durationMs)|0}ms</span></div>` : ''}
         <div class="detail-row">
           <span class="label">ID</span>
-          <span class="value" style="color:var(--text-3);font-family:var(--mono);font-size:11px">${esc(node.id)}</span>
+          <span class="value detail-node-id">${esc(node.id)}</span>
         </div>
       </div>
 
@@ -460,12 +487,12 @@ function buildDetail(view) {
         <h3>Original (before counterfactual)</h3>
         <div class="detail-row">
           <span class="label">Status</span>
-          <span class="value" style="display:flex;align-items:center;gap:6px">
+          <span class="value status-inline">
             <span class="status-dot ${STATUSES[originalNode.status]?.cls || 's-pending'}"></span>
             ${esc(STATUSES[originalNode.status]?.label || originalNode.status)}
           </span>
         </div>
-        <div class="detail-content-box" style="opacity:.6">${esc(originalNode.content)}</div>
+        <div class="detail-content-box detail-original-content">${esc(originalNode.content)}</div>
       </div>` : ''}
     </div>
   </div>`;
