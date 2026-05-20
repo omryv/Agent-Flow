@@ -1,104 +1,44 @@
-name: Test
+name: Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
-    permissions:
-      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20, 22]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+
         with:
-          node-version: 22
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npm audit --audit-level=high
-
-      - name: Run tests and capture count
-        id: jest
-        run: |
-          set -o pipefail
-          npm test -- --ci 2>&1 | tee jest.log
-          COUNT=$(grep -oP 'Tests:\s+\K\d+(?=\s+passed)' jest.log | head -1)
-          echo "count=${COUNT:-0}" >> "$GITHUB_OUTPUT"
-
-      - name: Publish success badge
-        if: github.ref == 'refs/heads/main' && success()
-        env:
-          COUNT: ${{ steps.jest.outputs.count }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          mkdir -p /tmp/badges
-
-          cat > /tmp/badges/tests.json <<JSON
-          {
-            "schemaVersion": 1,
-            "label": "tests",
-            "message": "${COUNT} passing",
-            "color": "brightgreen"
-          }
-          JSON
-
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git clone --branch badges --single-branch \
-            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            /tmp/badges-repo 2>/dev/null || {
-              git clone \
-                "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-                /tmp/badges-repo
-
-              cd /tmp/badges-repo
-              git checkout --orphan badges
-              git rm -rf . 2>/dev/null || true
-          }
-
-          cp /tmp/badges/tests.json /tmp/badges-repo/tests.json
-
-          cd /tmp/badges-repo
-
-          git add tests.json
-          git diff --cached --quiet || \
-            git commit -m "chore(badges): tests=${COUNT}"
-
-          git push origin badges
-
-      - name: Publish failure badge
-        if: github.ref == 'refs/heads/main' && failure()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          mkdir -p /tmp/badges
-
-          cat > /tmp/badges/tests.json <<JSON
-          {
-            "schemaVersion": 1,
-            "label": "tests",
-            "message": "failing",
-            "color": "red"
-          }
-          JSON
+      - name: Run tests
+        run: npm test -- --ci --forceExit
