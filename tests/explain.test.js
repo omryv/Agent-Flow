@@ -366,7 +366,7 @@ describe('explainRevision maxCollateralShown', () => {
   test('maxCollateralShown=0 shows no items and "and N more"', () => {
     const r = makeThreeSideEffects();
     const output = explainRevision(r, 0);
-    expect(output).not.toContain('a > b');
+    expect(output).not.toContain('\u00b7 a > b');
     expect(output).toContain('and 3 more');
   });
 

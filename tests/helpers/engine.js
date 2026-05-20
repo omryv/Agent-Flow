@@ -4,22 +4,26 @@ const vm   = require('vm');
 const fs   = require('fs');
 const path = require('path');
 
-// Create a fresh V8 context that hosts the Logic Engine globals.
-// vm.createContext seeds the sandbox with all standard JS built-ins
-// (Map, Set, Array, etc.) so the engine code runs without modification.
-const context = {};
+const JS_DIR = path.join(__dirname, '../../public/js');
+
+const SOURCE_FILES = [
+  'graph.js',
+  'facts.js',
+  'explain.js',
+  'revision.js',
+];
+
+const COMBINED_SCRIPT = SOURCE_FILES
+  .map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8'))
+  .join('\n');
+
+// class/const declarations are lexically scoped — not promoted to context.
+// Explicitly export them.
+const EXPORTS = '\nthis.Fact=Fact;this.Query=Query;this.Revision=Revision;';
+
+// Share host built-ins so toBeInstanceOf(Map/Set) works across the vm boundary.
+const context = { Map, Set, Array, Object, TypeError, Error, Number, JSON, String, console };
 vm.createContext(context);
-
-function load(filename) {
-  const filepath = path.join(__dirname, '../../js', filename);
-  const code = fs.readFileSync(filepath, 'utf8');
-  vm.runInContext(code, context);
-}
-
-// Load in the same order as index.html to mirror production.
-load('graph.js');
-load('facts.js');
-load('explain.js');
-load('revision.js');
+vm.runInContext(COMBINED_SCRIPT + EXPORTS, context);
 
 module.exports = context;

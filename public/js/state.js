@@ -1,7 +1,8 @@
 /*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
 'use strict';
 
-let state = _loadInitialState();
+let state = null;
+state = _loadInitialState();
 
 function _cloneNode(node) {
   return Object.assign({}, node);
