@@ -33,12 +33,17 @@ const JS_DIR = path.join(__dirname, '../../public/js');
 // they depend on live DOM APIs that are not needed for unit-testing the
 // pure business-logic layer.
 const SOURCE_FILES = [
-  'constants.js',
   'utils.js',
+  'constants.js',
   'data.js',
-  'state.js',
-  'layout.js',
   'adapters.js',
+  'layout.js',
+  'state.js',
+  'graph.js',
+  'facts.js',
+  'explain.js',
+  'revision.js',
+  'counterfactual.js',
 ];
 
 // Read and concatenate once at module load time.
