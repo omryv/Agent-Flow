@@ -352,6 +352,36 @@ describe('computeNodeCounterfactuals()', () => {
     });
   });
 
+  test('never returns a suggestion with empty affectedNodeIds', () => {
+    [linearRun(), diamondRun(), singleNodeRun()].forEach(run => {
+      run.nodes.forEach(node => {
+        call(run, node.id).forEach(s => {
+          expect(s.affectedNodeIds.length).toBeGreaterThan(0);
+          expect(s.summary).not.toContain('0 steps');
+        });
+      });
+    });
+  });
+
+  test('cutting terminal > __answer__ marks the terminal node as affected', () => {
+    const suggestions = call(linearRun(), 'n4');
+    const answerCut = suggestions.find(s =>
+      s.removedEdges.some(e => e.from === 'n4' && e.to === '__answer__')
+    );
+    expect(answerCut).toBeDefined();
+    expect(answerCut.affectedNodeIds).toEqual(['n4']);
+    expect(answerCut.summary).toContain('Format Response');
+  });
+
+  test('single node run: the only node is reported as affected', () => {
+    const suggestions = call(singleNodeRun(), 'only');
+    expect(suggestions.length).toBeGreaterThan(0);
+    suggestions.forEach(s => {
+      expect(s.affectedNodeIds).toEqual(['only']);
+      expect(s.summary).toContain('Only Node');
+    });
+  });
+
   test('summary is a non-empty human-readable string', () => {
     const suggestions = call(linearRun(), 'n2');
     suggestions.forEach(s => {
@@ -515,6 +545,16 @@ describe('materializeRevision()', () => {
     const cf = call(run, suggestion);
     expect(cf.cost).toBe(suggestion.cost);
     expect(cf.collateral).toBe(suggestion.collateral);
+  });
+
+  test('terminal cut materializes into a failed override on the terminal node', () => {
+    const run = linearRun();
+    const suggestion = ctx.window.AgentFlowCounterfactual.computeNodeCounterfactuals(run, 'n4')
+      .find(s => s.removedEdges.some(e => e.to === '__answer__'));
+    const cf = call(run, suggestion);
+    expect(Object.keys(cf.nodeOverrides)).toEqual(['n4']);
+    expect(cf.nodeOverrides.n4.status).toBe('failed');
+    expect(cf.name).toBe('Without "Format Response"');
   });
 });
 

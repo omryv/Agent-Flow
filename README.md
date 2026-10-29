@@ -1,6 +1,6 @@
 # Agent-Flow
 
-[![Tests](https://img.shields.io/badge/tests-594_passing-brightgreen)](https://github.com/OmryV/Agent-Flow/actions)
+[![Tests](https://img.shields.io/badge/tests-598_passing-brightgreen)](https://github.com/OmryV/Agent-Flow/actions)
 [![Node.js](https://img.shields.io/badge/Node.js-18%20%7C%2020%20%7C%2022-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Latest Verified Run](https://img.shields.io/badge/Latest_Run-ace68e9-success)](https://github.com/OmryV/Agent-Flow/commit/ace68e94a21f294d26aff8fc4eb58236a33fb286)
 
@@ -90,7 +90,7 @@ All user-controlled strings pass through `esc()` (8-char entity encoding) and `e
 
 
 
-594 tests across 11 suites covering data validation, adapters, layout, state management, graph operations, fact parsing, belief revision, explanation generation, and counterfactual integration.
+598 tests across 11 suites covering data validation, adapters, layout, state management, graph operations, fact parsing, belief revision, explanation generation, and counterfactual integration.
 
 ### Test Infrastructure
 

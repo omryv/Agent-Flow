@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Run list items use `role="option"` with `aria-selected`; tab bar items use `aria-selected`; graph nodes use `aria-pressed` to expose selection state to assistive technologies
 - `escAttr()` is now used consistently for all HTML attribute value contexts in `render.js` (previously `esc()` was used in some attribute positions; IDs are unchanged since they satisfy `SAFE_ID_RE`)
 
+### Fixed
+- Logic Engine no longer suggests an empty "If 0 steps had failed" counterfactual: cutting a virtual `terminal > __answer__` edge now marks the terminal step as failed, and suggestions with no affected nodes are dropped
+
 ### Planned
 - Command palette for advanced navigation
 - Node search and filtering

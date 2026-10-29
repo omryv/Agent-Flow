@@ -130,13 +130,15 @@ function computeNodeCounterfactuals(run, selectedNodeId) {
 
     rev.editsRemoved.forEach(fact => {
       removedEdges.push({ from: fact.source, to: fact.target });
-      if (fact.target !== ANSWER_NODE_ID) affectedNodeIds.add(fact.source);
+      // Every removed edge breaks its source step. Cutting a virtual
+      // "terminal > __answer__" edge means the terminal step itself failed.
+      affectedNodeIds.add(fact.source);
       if (fact.source === selectedNodeId || fact.target === selectedNodeId) {
         touchesSelected = true;
       }
     });
 
-    if (!touchesSelected) return;
+    if (!touchesSelected || affectedNodeIds.size === 0) return;
 
     const signature = removedEdges
       .map(e => e.from + '>' + e.to)
