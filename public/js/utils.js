@@ -64,15 +64,15 @@ const ErrorBoundary = (() => {
       if (!app) return;
       const msg = String(err?.message || err).slice(0, 500);
       app.innerHTML = `
-        <div style="padding:48px;max-width:560px;margin:0 auto;color:#ecf0fb;font-family:system-ui">
-          <h1 style="font-size:18px;margin-bottom:12px;color:#ff7a85">Something broke</h1>
-          <p style="font-size:13px;color:#9aa3c0;margin-bottom:16px">
+        <div class="eb-panel">
+          <h1 class="eb-title">Something broke</h1>
+          <p class="eb-text">
             ${esc(label || 'render')} failed. Your data is preserved.
           </p>
-          <pre style="font-size:11px;background:rgba(255,255,255,.04);padding:12px;border-radius:8px;overflow:auto;max-height:240px;white-space:pre-wrap;word-break:break-word">${esc(msg)}</pre>
-          <div style="display:flex;gap:8px;margin-top:16px">
-            <button id="eb-reload" style="padding:8px 14px;border-radius:8px;background:#5f7ef5;color:#0b0d15;border:0;font-weight:600;cursor:pointer">Reload</button>
-            <button id="eb-reset" style="padding:8px 14px;border-radius:8px;background:transparent;color:#ecf0fb;border:1px solid rgba(255,255,255,.14);cursor:pointer">Reset & reload</button>
+          <pre class="eb-message">${esc(msg)}</pre>
+          <div class="eb-actions">
+            <button id="eb-reload" class="eb-btn eb-btn-primary">Reload</button>
+            <button id="eb-reset" class="eb-btn">Reset & reload</button>
           </div>
         </div>`;
       document.getElementById('eb-reload')?.addEventListener('click', () => location.reload());
