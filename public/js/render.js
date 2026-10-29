@@ -81,6 +81,7 @@ function buildHeader(view) {
   return `
   <div id="header">
     <div class="logo"><img src="/favicon.svg" class="logo-img" alt="AgentFlow"> AgentFlow <span class="tagline">Trace Observer</span></div>
+    <a class="byline" href="https://visigence.com" target="_blank" rel="noopener noreferrer">by Visigence</a>
     <div class="spacer"></div>
     ${run ? `<button class="btn" data-action="handleExport" title="Export (⌘E)">${ICONS.export} Export</button>` : ''}
     <button class="btn" data-action="openImportDialog" title="Import (⌘I)">${ICONS.import} Import</button>
@@ -123,8 +124,11 @@ function buildCanvasArea(view) {
       <div id="empty-state">
         ${ICONS.cursor}
         <h2>No run selected</h2>
-        <p>Import a .agentflow.json file to get started.</p>
-        <button class="btn primary" data-action="openImportDialog">${ICONS.import} Import</button>
+        <p>Import a trace from LangSmith, LangFuse, W&amp;B Weave or a .agentflow.json file, or explore a ready-made example.</p>
+        <div class="es-actions">
+          <button class="btn primary" data-action="loadExample">Try an example</button>
+          <button class="btn" data-action="openImportDialog">${ICONS.import} Import</button>
+        </div>
       </div>
     </div>`;
   }
@@ -135,6 +139,7 @@ function buildCanvasArea(view) {
 
   return `
   <div id="canvas-area">
+    ${originalRun.id === EXAMPLE_RUN.id ? buildExampleGuide() : ''}
     <div id="toolbar">
       <span class="section-label">View</span>
       <div class="tab-bar">
@@ -175,6 +180,15 @@ function buildCanvasArea(view) {
     ${buildLegend()}
     ${state.activeTab === 'graph' ? buildGraph(view) : buildCfTab(view)}
     ${buildMetricsBar(view)}
+  </div>`;
+}
+
+function buildExampleGuide() {
+  return `<div id="example-guide">
+    <span class="eg-label">Example</span>
+    <span class="eg-step"><b>1</b> Click a step to see what the agent did</span>
+    <span class="eg-step"><b>2</b> Pick a "What if" scenario in the Scenario menu</span>
+    <span class="eg-step"><b>3</b> Press Compute counterfactuals to find which failures stop the answer</span>
   </div>`;
 }
 

@@ -115,6 +115,12 @@ function _finishImport(run) {
   });
 }
 
+// ── Example run ──────────────────────────────────────────
+function loadExample() {
+  if (state.runs.some(r => r.id === EXAMPLE_RUN.id)) { selectRun(EXAMPLE_RUN.id); return; }
+  _finishImport(JSON.parse(JSON.stringify(EXAMPLE_RUN)));
+}
+
 // ── Search ───────────────────────────────────────────────
 function setSearch(q) { setState({ searchQuery: typeof q === 'string' ? q : '' }); }
 
@@ -178,7 +184,7 @@ function _onDrop(e) {
 
 // ── Action dispatch ──────────────────────────────────────
 const ACTIONS = {
-  closeModal, doImport, handleExport, openImportDialog, materializeCounterfactual, generateCounterfactuals,
+  closeModal, doImport, handleExport, openImportDialog, loadExample, materializeCounterfactual, generateCounterfactuals,
   selectRun, selectNode, setTab, setCf, toggleCf, setSearch,
   modalBackdrop(_id, _el, e) { if (e.target === _el) closeModal(); },
 };

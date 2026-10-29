@@ -135,3 +135,31 @@ describe('toggle actions through delegated clicks', () => {
     expect(state().activeCounterfactual).toBeNull();
   });
 });
+
+// ── Try an example ────────────────────────────────────────────────────────────
+
+describe('Try an example', () => {
+  const state = () => vm.runInContext('state', ctx);
+  const exampleId = () => vm.runInContext('EXAMPLE_RUN.id', ctx);
+
+  test('loads the example run and makes it active', () => {
+    fire('click', clickOn({ action: 'loadExample' }));
+    expect(state().runs.map(r => r.id)).toEqual([exampleId()]);
+    expect(state().activeRunId).toBe(exampleId());
+  });
+
+  test('loading it again selects the existing copy instead of duplicating it', () => {
+    fire('click', clickOn({ action: 'loadExample' }));
+    const run = chainRun();
+    ctx.setState({ runs: state().runs.concat([run]), activeRunId: run.id });
+    fire('click', clickOn({ action: 'loadExample' }));
+    expect(state().runs).toHaveLength(2);
+    expect(state().activeRunId).toBe(exampleId());
+  });
+
+  test('the loaded run is a copy, so edits never reach EXAMPLE_RUN', () => {
+    fire('click', clickOn({ action: 'loadExample' }));
+    state().runs[0].nodes[0].name = 'changed';
+    expect(vm.runInContext('EXAMPLE_RUN.nodes[0].name', ctx)).not.toBe('changed');
+  });
+});
