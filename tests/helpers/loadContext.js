@@ -35,6 +35,7 @@ const JS_DIR = path.join(__dirname, '../../public/js');
 const SOURCE_FILES = [
   'utils.js',
   'constants.js',
+  'example.js',
   'data.js',
   'adapters.js',
   'layout.js',

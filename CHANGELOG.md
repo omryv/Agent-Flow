@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `tests/events.test.js`: replays clicks and changes the way a browser bubbles them and asserts each action fires exactly once
+- **Try an example** on the empty screen: loads a built-in customer support agent run (`public/js/example.js`) with two "What if" scenarios and a three-step guide; `tests/example.test.js` validates it
+- "by Visigence" link in the header
 
 ### Planned
 - Command palette for advanced navigation

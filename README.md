@@ -44,13 +44,13 @@ Import a trace from LangSmith, LangFuse or W&B Weave, inspect every step as a gr
 
 | | |
 |---|---|
-| **Runtime** | 14 classic `<script>` files, 2,396 lines of vanilla JavaScript. No framework, no bundler, no transpiler. |
+| **Runtime** | 15 classic `<script>` files, 2,488 lines of vanilla JavaScript. No framework, no bundler, no transpiler. |
 | **Dependencies** | None at runtime. There is no `package.json` and no build step: `public/` is deployed as-is. |
 | **Data handling** | Traces never leave the browser. The code makes no `fetch`, XHR or WebSocket calls, and state persists only to `localStorage`. |
 | **Inputs** | Native `.agentflow.json`, plus auto-detected LangSmith, LangFuse and W&B Weave exports. |
 | **Counterfactuals** | Authored scenarios (`nodeOverrides`), plus scenarios computed by a built-in Logic Engine (minimum edge cuts, Pareto-ranked). |
-| **Security** | CSP `default-src 'none'`, sha384 SRI on all 15 assets (verified by CI), HSTS preload, COOP/COEP/CORP, entity-escaping on every user string. |
-| **Tests** | 611 Jest tests across 12 suites, run by CI on Node 18, 20 and 22 for every push to `main` and every pull request. |
+| **Security** | CSP `default-src 'none'`, sha384 SRI on all 16 assets (verified by CI), HSTS preload, COOP/COEP/CORP, entity-escaping on every user string. |
+| **Tests** | 622 Jest tests across 13 suites, run by CI on Node 18, 20 and 22 for every push to `main` and every pull request. |
 
 ---
 
@@ -64,7 +64,7 @@ cd Agent-Flow
 python3 -m http.server 8080 --directory public
 ```
 
-Open <http://localhost:8080>, press <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>I</kbd>, and load any file from [`examples/`](examples):
+Open <http://localhost:8080> and press **Try an example**, or press <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>I</kbd> and load any file from [`examples/`](examples):
 
 | Example | Format | Shape |
 |---|---|---|
@@ -78,6 +78,10 @@ Open <http://localhost:8080>, press <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>I</kbd>,
 ---
 
 ## Using AgentFlow
+
+### Try an example
+
+On an empty workspace, **Try an example** loads a built-in customer support agent run: seven steps, two "What if" scenarios that change the final answer, and a three-step guide across the top of the canvas. Pressing it again selects the loaded copy instead of adding another.
 
 ### Three ways to import
 
@@ -133,12 +137,12 @@ Shortcuts other than <kbd>Esc</kbd> are ignored while typing in a field or while
 
 ### Load order is the dependency graph
 
-There are no modules and no bundler. `public/index.html` loads 14 classic scripts **in a fixed order**, each pinned with an SRI hash. They share one global lexical scope, so each file may only use names defined by files loaded before it. The two subsystems that need a namespace register one on `window`:
+There are no modules and no bundler. `public/index.html` loads 15 classic scripts **in a fixed order**, each pinned with an SRI hash. They share one global lexical scope, so each file may only use names defined by files loaded before it. The two subsystems that need a namespace register one on `window`:
 
 ```mermaid
 flowchart LR
   subgraph F["Foundation"]
-    U["utils.js<br/>escaping · SafeStore · ErrorBoundary"] --> K["constants.js<br/>roles · statuses · icons · SAFE_ID_RE"] --> D["data.js<br/>validateRunSchema"]
+    U["utils.js<br/>escaping · SafeStore · ErrorBoundary"] --> K["constants.js<br/>roles · statuses · icons · SAFE_ID_RE"] --> EX["example.js<br/>built-in example run"] --> D["data.js<br/>validateRunSchema"]
   end
   subgraph M["Ingest and model"]
     A["adapters.js<br/>LangSmith · LangFuse · Weave"] --> L["layout.js<br/>Kahn layering"] --> S["state.js<br/>normalize · persist · views"]
@@ -162,6 +166,7 @@ flowchart LR
 |---|---:|---|
 | `utils.js` | 95 | `esc()` and `escAttr()` HTML escaping, `clampStr()`, `SafeStore` (`localStorage` with a 4 MB cap), `ErrorBoundary` |
 | `constants.js` | 68 | `ROLES`, `STATUSES`, inline SVG `ICONS`, `SAFE_ID_RE` |
+| `example.js` | 72 | `EXAMPLE_RUN`: the built-in run behind **Try an example**, pure data in the native schema |
 | `data.js` | 48 | `validateRunSchema()`: structure, ID rules, size caps, referential integrity |
 | `adapters.js` | 273 | Format detection, three importers, role and status inference |
 | `layout.js` | 50 | `layoutNodes()`: Kahn's algorithm, with layers mapped to x and centred y |
@@ -171,8 +176,8 @@ flowchart LR
 | `explain.js` | 71 | Human-readable explanations of revisions |
 | `revision.js` | 198 | `reviseToFalsify` / `reviseToSatisfy`, Pareto filtering; registers `window.LogicEngine` |
 | `counterfactual.js` | 280 | Converts traces to facts, caches revisions per topology, ranks per-node suggestions, materializes them; registers `window.AgentFlowCounterfactual` |
-| `render.js` | 497 | Builds the whole UI as one escaped HTML string, then applies positions and colours via CSSOM |
-| `events.js` | 374 | Delegated `data-action` / `data-change` dispatch, import/export, paste, drop, keyboard |
+| `render.js` | 511 | Builds the whole UI as one escaped HTML string, then applies positions and colours via CSSOM |
+| `events.js` | 380 | Delegated `data-action` / `data-change` dispatch, import/export, paste, drop, keyboard |
 | `main.js` | 6 | `ErrorBoundary.install()`, `installDelegation()`, `render()` |
 
 ### One state atom, one render path
@@ -361,7 +366,7 @@ To falsify 'n1 > __answer__', the proposed edit (cost=1):
 
 | Layer | Control |
 |---|---|
-| Supply chain | No dependencies, no build. All 14 scripts and the stylesheet carry `integrity="sha384-…"`, so a modified file is refused by the browser, and CI fails any commit whose hashes don't match the files. |
+| Supply chain | No dependencies, no build. All 15 scripts and the stylesheet carry `integrity="sha384-…"`, so a modified file is refused by the browser, and CI fails any commit whose hashes don't match the files. |
 | Output encoding | `esc()` encodes 8 characters (`` & < > " ' / ` = ``) before any `innerHTML`. `escAttr()` numeric-encodes everything except `[A-Za-z0-9_-]` in attribute values. |
 | Input validation | `SAFE_ID_RE` allow-list for every id. Length caps on names (200) and content (10,000). Caps on nodes (500) and edges (2,000). Dangling edges are rejected. |
 | Resource limits | 2 MB cap on file and drop imports. 4 MB cap on persisted state, and an oversized save is refused, leaving the previous state intact. |
@@ -397,7 +402,7 @@ Every push to `main` and every pull request runs [CI](.github/workflows/ci.yml) 
 | Job | What it proves |
 |---|---|
 | **SRI hashes** | Every script and stylesheet in `public/index.html` has a `sha384` integrity attribute that matches the file byte for byte ([`.github/scripts/verify-sri.js`](.github/scripts/verify-sri.js)). A stale or missing hash fails the build. |
-| **Tests (Node 18 / 20 / 22)** | All 611 tests pass on each Node version. |
+| **Tests (Node 18 / 20 / 22)** | All 622 tests pass on each Node version. |
 
 The workflow is locked down the same way as the site:
 
@@ -418,7 +423,8 @@ npx --yes jest@30.5.2 --config '{}'
 | `adapters.test.js` | 103 | Format detection, all three importers, ID/time/role/status helpers |
 | `counterfactual.test.js` | 75 | `traceToFacts`, per-node suggestions, materialization, the topology cache |
 | `data-validation.test.js` | 52 | Every schema rule, including dangling edges |
-| `events.test.js` | 8 | Delegated clicks and changes dispatch exactly once; toggles (node selection, counterfactual cards) driven by simulated clicks |
+| `events.test.js` | 11 | Delegated clicks and changes dispatch exactly once; toggles (node selection, counterfactual cards) and **Try an example** driven by simulated clicks |
+| `example.test.js` | 8 | The built-in example: schema, consistent metrics, scenarios that materialize and change the answer, at least one computed scenario |
 | `explain.test.js` | 48 | Explanation text: sections, collateral listing, truncation |
 | `facts.test.js` | 44 | `Fact` / `Query` parsing and fact-set operations |
 | `graph.test.js` | 39 | Adjacency, reachability, paths, closure, on-path edges |
@@ -427,9 +433,9 @@ npx --yes jest@30.5.2 --config '{}'
 | `state.test.js` | 50 | Normalization, persistence, views, materialization, cloning |
 | `utils.test.js` | 40 | Escaping, clamping, `SafeStore` limits |
 | `workflows.test.js` | 70 | End-to-end flows through state: import, switch, search, tabs, scenarios, reload |
-| **Total** | **611** | |
+| **Total** | **622** | |
 
-**Harness.** There is no jsdom. `tests/helpers/loadContext.js` concatenates the 11 non-DOM source files and runs them in a Node `vm` sandbox with mocked `localStorage`, `document` and `window`, exactly as the browser would load them. `tests/helpers/engine.js` does the same for the four Logic Engine files alone.
+**Harness.** There is no jsdom. `tests/helpers/loadContext.js` concatenates the 12 non-DOM source files and runs them in a Node `vm` sandbox with mocked `localStorage`, `document` and `window`, exactly as the browser would load them. `tests/helpers/engine.js` does the same for the four Logic Engine files alone.
 
 **Event delegation.** `events.test.js` loads `events.js` into the same sandbox with stub event targets, and replays each click the way a browser bubbles it (through `#app`, then `document`).
 
@@ -459,12 +465,12 @@ Agent-Flow/
 │   ├── workflows/ci.yml        # SRI check + tests on Node 18/20/22, actions pinned by SHA
 │   └── scripts/verify-sri.js   # verifies every integrity hash in public/index.html
 ├── public/                     # deployed as-is
-│   ├── index.html              # 14 scripts + 1 stylesheet, all SRI-pinned
+│   ├── index.html              # 15 scripts + 1 stylesheet, all SRI-pinned
 │   ├── css/styles.css          # dark glass UI, role colour tokens
-│   ├── js/                     # 14 modules (see Architecture)
+│   ├── js/                     # 15 modules (see Architecture)
 │   └── favicon.svg · favicon-32.png · apple-touch-icon.png
 ├── examples/                   # native, LangSmith, LangFuse and Weave sample traces
-├── tests/                      # 12 Jest suites + vm sandbox helpers
+├── tests/                      # 13 Jest suites + vm sandbox helpers
 ├── docs/                       # screenshots and historical release reports
 ├── vercel.json                 # headers, caching, output directory
 ├── CHANGELOG.md · SECURITY.md · LICENSE
