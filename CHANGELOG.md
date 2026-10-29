@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Active tab (`graph` / `counterfactuals`) is now preserved when switching between runs
 - Run list items use `role="option"` with `aria-selected`; tab bar items use `aria-selected`; graph nodes use `aria-pressed` to expose selection state to assistive technologies
 - `escAttr()` is now used consistently for all HTML attribute value contexts in `render.js` (previously `esc()` was used in some attribute positions; IDs are unchanged since they satisfy `SAFE_ID_RE`)
+- Logic Engine revisions are computed once per trace topology and reused for every node, re-render and "Compute counterfactuals" pass, instead of once per node (40-step trace in Chromium: ~3.7 s → ~0.14 s). Suggestions are unchanged
+- README no longer claims CI verification; the project intentionally ships with no build step, no `package.json` and no CI
+- Source file headers now carry `SPDX-License-Identifier: Apache-2.0`, matching `LICENSE`; the conflicting "Proprietary / All rights reserved" notices are removed
 
 ### Fixed
 - Logic Engine no longer suggests an empty "If 0 steps had failed" counterfactual: cutting a virtual `terminal > __answer__` edge now marks the terminal step as failed, and suggestions with no affected nodes are dropped

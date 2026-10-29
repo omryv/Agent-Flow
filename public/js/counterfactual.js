@@ -1,4 +1,4 @@
-/*! AgentFlow — Copyright (c) 2026 Visigence. Proprietary. */
+/*! AgentFlow — Copyright (c) 2026 Visigence. SPDX-License-Identifier: Apache-2.0 */
 'use strict';
 
 // ── Logic Engine bridge ───────────────────────────────────────────────────────
@@ -80,6 +80,79 @@ function traceToFacts(run) {
   };
 }
 
+// Revisions depend only on the trace topology (node ids and edges), never on
+// names or statuses. They are computed once per topology and then shared by
+// every node selection, every re-render and the run-level "Compute
+// counterfactuals" pass, instead of re-running the exhaustive search per node.
+let _revisionCache = { key: null, revisions: [] };
+
+function _topologyKey(run) {
+  return JSON.stringify([
+    run.nodes.map(node => node.id),
+    (run.edges || []).map(edge => [edge.from, edge.to]),
+  ]);
+}
+
+/**
+ * All Pareto-optimal revisions that disconnect a source from the final answer,
+ * deduplicated by the set of removed edges. Each entry is shaped as
+ * { id, cost, collateral, affectedNodeIds, removedEdges }. The returned array
+ * is shared through the cache, so callers must copy before mutating.
+ */
+function _runRevisions(run) {
+  if (!Array.isArray(run.nodes) || run.nodes.length === 0) return [];
+  const key = _topologyKey(run);
+  if (_revisionCache.key === key) return _revisionCache.revisions;
+
+  const LE = _logicEngine();
+  const traceFacts = traceToFacts(run);
+  const revisions = [];
+  const seenSignatures = new Set();
+
+  if (traceFacts) {
+    const { factSet, answerId, allSourceIds } = traceFacts;
+    allSourceIds.forEach(src => {
+      const query = new LE.Query(src, answerId);
+      let found;
+      try {
+        found = LE.reviseToFalsify(factSet, query, MAX_EDITS_PER_REVISION);
+      } catch (e) {
+        return;
+      }
+
+      found.forEach(rev => {
+        const removedEdges = [];
+        const affectedNodeIds = new Set();
+        rev.editsRemoved.forEach(fact => {
+          removedEdges.push({ from: fact.source, to: fact.target });
+          // Every removed edge breaks its source step. Cutting a virtual
+          // "terminal > __answer__" edge means the terminal step itself failed.
+          affectedNodeIds.add(fact.source);
+        });
+        if (affectedNodeIds.size === 0) return;
+
+        const signature = removedEdges
+          .map(e => e.from + '>' + e.to)
+          .sort()
+          .join('|');
+        if (seenSignatures.has(signature)) return;
+        seenSignatures.add(signature);
+
+        revisions.push({
+          id: 'cf-suggested-' + signature.replace(/[^A-Za-z0-9_-]/g, '_'),
+          cost: rev.cost,
+          collateral: rev.collateral,
+          affectedNodeIds: Array.from(affectedNodeIds),
+          removedEdges,
+        });
+      });
+    });
+  }
+
+  _revisionCache = { key, revisions };
+  return revisions;
+}
+
 /**
  * Compute Pareto-optimal counterfactual suggestions for a selected node.
  *
@@ -103,71 +176,29 @@ function computeNodeCounterfactuals(run, selectedNodeId) {
   const LE = _logicEngine();
   if (!LE || !run || !selectedNodeId) return [];
 
-  const traceFacts = traceToFacts(run);
-  if (!traceFacts) return [];
+  const suggestions = _runRevisions(run)
+    .filter(rev => rev.removedEdges.some(e => e.from === selectedNodeId || e.to === selectedNodeId))
+    .map(rev => {
+      const affectedNames = rev.affectedNodeIds
+        .map(id => {
+          const node = run.nodes.find(n => n.id === id);
+          return node ? node.name : id;
+        })
+        .filter(Boolean);
 
-  const { factSet, sourceId, answerId, allSourceIds } = traceFacts;
+      const summary = affectedNames.length === 1
+        ? 'If "' + affectedNames[0] + '" had failed, the final answer would not have been reached.'
+        : 'If ' + affectedNames.length + ' steps had failed, the final answer would not have been reached.';
 
-  const allRevisions = [];
-  allSourceIds.forEach(src => {
-    const query = new LE.Query(src, answerId);
-    let revisions;
-    try {
-      revisions = LE.reviseToFalsify(factSet, query, MAX_EDITS_PER_REVISION);
-    } catch (e) {
-      return;
-    }
-    revisions.forEach(rev => allRevisions.push({ rev, src }));
-  });
-
-  const suggestions = [];
-  const seenSignatures = new Set();
-
-  allRevisions.forEach(({ rev }) => {
-    const removedEdges = [];
-    const affectedNodeIds = new Set();
-    let touchesSelected = false;
-
-    rev.editsRemoved.forEach(fact => {
-      removedEdges.push({ from: fact.source, to: fact.target });
-      // Every removed edge breaks its source step. Cutting a virtual
-      // "terminal > __answer__" edge means the terminal step itself failed.
-      affectedNodeIds.add(fact.source);
-      if (fact.source === selectedNodeId || fact.target === selectedNodeId) {
-        touchesSelected = true;
-      }
+      return {
+        id: rev.id,
+        cost: rev.cost,
+        collateral: rev.collateral,
+        affectedNodeIds: rev.affectedNodeIds.slice(),
+        removedEdges: rev.removedEdges.map(e => ({ from: e.from, to: e.to })),
+        summary,
+      };
     });
-
-    if (!touchesSelected || affectedNodeIds.size === 0) return;
-
-    const signature = removedEdges
-      .map(e => e.from + '>' + e.to)
-      .sort()
-      .join('|');
-    if (seenSignatures.has(signature)) return;
-    seenSignatures.add(signature);
-
-    const affectedArray = Array.from(affectedNodeIds);
-    const affectedNames = affectedArray
-      .map(id => {
-        const node = run.nodes.find(n => n.id === id);
-        return node ? node.name : id;
-      })
-      .filter(Boolean);
-
-    const summary = affectedNames.length === 1
-      ? 'If "' + affectedNames[0] + '" had failed, the final answer would not have been reached.'
-      : 'If ' + affectedNames.length + ' steps had failed, the final answer would not have been reached.';
-
-    suggestions.push({
-      id: 'cf-suggested-' + signature.replace(/[^A-Za-z0-9_-]/g, '_'),
-      cost: rev.cost,
-      collateral: rev.collateral,
-      affectedNodeIds: affectedArray,
-      removedEdges,
-      summary,
-    });
-  });
 
   suggestions.sort((a, b) => {
     if (a.cost !== b.cost) return a.cost - b.cost;

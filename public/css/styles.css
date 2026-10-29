@@ -1,6 +1,6 @@
 /*! AgentFlow — world-class glass UI
- *  Copyright (c) 2026 Omry Damari "Visigence". All rights reserved.
- *  Proprietary and confidential.
+ *  Copyright (c) 2026 Omry Damari "Visigence".
+ *  SPDX-License-Identifier: Apache-2.0
  *
  *  Perf note: real bottleneck is render.js full innerHTML rewrite per setState.
  *  Batch with requestAnimationFrame + diff nodes-only on selection/drag.
