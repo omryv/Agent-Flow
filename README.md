@@ -6,11 +6,12 @@
 
 Import a trace from LangSmith, LangFuse or W&B Weave, inspect every step as a graph, and ask *"what if this step had failed?"*. Everything runs in your browser, with no backend, no build step and no runtime dependencies.
 
-[![Tests](https://img.shields.io/badge/tests-603%2F603%20passing-brightgreen)](#testing)
-[![Node](https://img.shields.io/badge/node-18%20%7C%2020%20%7C%2022-brightgreen?logo=node.js&logoColor=white)](#testing)
+[![CI](https://github.com/omryv/Agent-Flow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/omryv/Agent-Flow/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/badge/release-v3.0.0-brightgreen)](https://github.com/omryv/Agent-Flow/tree/v3.0.0)
+[![Node](https://img.shields.io/badge/node-18%20%7C%2020%20%7C%2022-brightgreen?logo=node.js&logoColor=white)](https://github.com/omryv/Agent-Flow/actions/workflows/ci.yml)
 [![Build step](https://img.shields.io/badge/build%20step-none-brightgreen)](#architecture)
 [![Runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](#architecture)
-[![SRI](https://img.shields.io/badge/SRI-15%2F15%20sha384-brightgreen)](#security-model)
+[![SRI](https://img.shields.io/badge/SRI-sha384%20verified%20in%20CI-brightgreen)](https://github.com/omryv/Agent-Flow/actions/workflows/ci.yml)
 [![CSP](https://img.shields.io/badge/CSP-default--src%20%27none%27-brightgreen)](#security-model)
 [![License](https://img.shields.io/github/license/omryv/Agent-Flow?color=brightgreen)](LICENSE)
 
@@ -48,8 +49,8 @@ Import a trace from LangSmith, LangFuse or W&B Weave, inspect every step as a gr
 | **Data handling** | Traces never leave the browser. The code makes no `fetch`, XHR or WebSocket calls, and state persists only to `localStorage`. |
 | **Inputs** | Native `.agentflow.json`, plus auto-detected LangSmith, LangFuse and W&B Weave exports. |
 | **Counterfactuals** | Authored scenarios (`nodeOverrides`), plus scenarios computed by a built-in Logic Engine (minimum edge cuts, Pareto-ranked). |
-| **Security** | CSP `default-src 'none'`, sha384 SRI on all 15 assets, HSTS preload, COOP/COEP/CORP, entity-escaping on every user string. |
-| **Tests** | 603 Jest tests across 11 suites, passing on Node 18, 20 and 22. |
+| **Security** | CSP `default-src 'none'`, sha384 SRI on all 15 assets (verified by CI), HSTS preload, COOP/COEP/CORP, entity-escaping on every user string. |
+| **Tests** | 603 Jest tests across 11 suites, run by CI on Node 18, 20 and 22 for every push to `main` and every pull request. |
 
 ---
 
@@ -360,7 +361,7 @@ To falsify 'n1 > __answer__', the proposed edit (cost=1):
 
 | Layer | Control |
 |---|---|
-| Supply chain | No dependencies, no build. All 14 scripts and the stylesheet carry `integrity="sha384-…"`, so a modified file is refused by the browser. |
+| Supply chain | No dependencies, no build. All 14 scripts and the stylesheet carry `integrity="sha384-…"`, so a modified file is refused by the browser, and CI fails any commit whose hashes don't match the files. |
 | Output encoding | `esc()` encodes 8 characters (`` & < > " ' / ` = ``) before any `innerHTML`. `escAttr()` numeric-encodes everything except `[A-Za-z0-9_-]` in attribute values. |
 | Input validation | `SAFE_ID_RE` allow-list for every id. Length caps on names (200) and content (10,000). Caps on nodes (500) and edges (2,000). Dangling edges are rejected. |
 | Resource limits | 2 MB cap on file and drop imports. 4 MB cap on persisted state, and an oversized save is refused, leaving the previous state intact. |
@@ -391,10 +392,25 @@ The per-topology cache means **Compute counterfactuals** pays for one analysis, 
 
 ## Testing
 
-The badges above are **static** and were verified by hand, because the project intentionally has **no CI**. Last verification: commit `427e19c`, **603/603 passing** on Node **18.20.8**, **20.20.2** and **22.23.4**.
+Every push to `main` and every pull request runs [CI](.github/workflows/ci.yml) on GitHub Actions. The **CI** badge at the top shows the result for the latest commit on `main`.
+
+| Job | What it proves |
+|---|---|
+| **SRI hashes** | Every script and stylesheet in `public/index.html` has a `sha384` integrity attribute that matches the file byte for byte ([`.github/scripts/verify-sri.js`](.github/scripts/verify-sri.js)). A stale or missing hash fails the build. |
+| **Tests (Node 18 / 20 / 22)** | All 603 tests pass on each Node version. |
+
+The workflow is locked down the same way as the site:
+
+- Actions are pinned to full commit SHAs (`actions/checkout` v7.0.1, `actions/setup-node` v7.1.0), not movable tags.
+- The token is read-only (`permissions: contents: read`), credentials are not persisted, and no secrets or caches are used.
+- Jest is pinned to `30.5.2` and fetched only inside CI. The deployed site still has no dependencies and no build step.
+- CI only reads and tests. It never writes to the repository or deploys.
+
+Run the same checks locally:
 
 ```bash
-npx --yes jest@30 --config '{}'
+node .github/scripts/verify-sri.js
+npx --yes jest@30.5.2 --config '{}'
 ```
 
 | Suite | Tests | Covers |
@@ -428,7 +444,7 @@ The site is deployed as static files on Vercel (`vercel.json`: `outputDirectory:
 openssl dgst -sha384 -binary public/js/counterfactual.js | openssl base64 -A
 ```
 
-Paste the result into the matching `integrity="sha384-…"` attribute in `public/index.html`.
+Paste the result into the matching `integrity="sha384-…"` attribute in `public/index.html`, then confirm every hash with `node .github/scripts/verify-sri.js`. CI runs the same check and fails if any hash is stale.
 
 ---
 
@@ -436,6 +452,9 @@ Paste the result into the matching `integrity="sha384-…"` attribute in `public
 
 ```text
 Agent-Flow/
+├── .github/
+│   ├── workflows/ci.yml        # SRI check + tests on Node 18/20/22, actions pinned by SHA
+│   └── scripts/verify-sri.js   # verifies every integrity hash in public/index.html
 ├── public/                     # deployed as-is
 │   ├── index.html              # 14 scripts + 1 stylesheet, all SRI-pinned
 │   ├── css/styles.css          # dark glass UI, role colour tokens
@@ -470,7 +489,7 @@ Verified against commit `427e19c`.
 - Computed counterfactuals are **structural**. Nothing is re-executed, and the counterfactual final answer is a placeholder.
 - The engine search is exhaustive over cuts of at most 2 edges. On tree-shaped traces where the root fans out to three or more branches, it finds **no** scenarios (the bundled Weave example is one). Its cost also grows quickly with trace size (see [Performance](#performance)).
 - State is per browser (`localStorage`, 4 MB). There is no sync and no backend.
-- There is no CI, so tests run locally (see [Testing](#testing)).
+- CI covers the logic layer and the SRI hashes. The DOM layer has no automated tests (see [Testing](#testing)).
 
 ---
 
