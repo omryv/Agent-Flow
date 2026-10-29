@@ -468,7 +468,7 @@ Agent-Flow/
 │   ├── index.html              # 15 scripts + 1 stylesheet, all SRI-pinned
 │   ├── css/styles.css          # dark glass UI, role colour tokens
 │   ├── js/                     # 15 modules (see Architecture)
-│   └── favicon.svg · favicon-32.png · apple-touch-icon.png
+│   └── icon.png (source logo) · logo.png · favicon-32.png · apple-touch-icon.png
 ├── examples/                   # native, LangSmith, LangFuse and Weave sample traces
 ├── tests/                      # 13 Jest suites + vm sandbox helpers
 ├── docs/                       # screenshots and historical release reports

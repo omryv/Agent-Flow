@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Try an example** on the empty screen: loads a built-in customer support agent run (`public/js/example.js`) with two "What if" scenarios and a three-step guide; `tests/example.test.js` validates it
 - "by Visigence" link in the header
 
+### Changed
+- New Visigence logo for the browser tab icon, the home-screen icon, the header and the empty screen, generated from `public/icon.png`; the old `favicon.svg` is removed
+
 ### Planned
 - Command palette for advanced navigation
 - Live streaming trace support

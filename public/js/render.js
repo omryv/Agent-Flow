@@ -80,7 +80,7 @@ function buildHeader(view) {
   const run = view ? view.run : null;
   return `
   <div id="header">
-    <div class="logo"><img src="/favicon.svg" class="logo-img" alt="AgentFlow"> AgentFlow <span class="tagline">Trace Observer</span></div>
+    <div class="logo"><img src="/logo.png" class="logo-img" alt="AgentFlow"> AgentFlow <span class="tagline">Trace Observer</span></div>
     <a class="byline" href="https://visigence.com" target="_blank" rel="noopener noreferrer">by Visigence</a>
     <div class="spacer"></div>
     ${run ? `<button class="btn" data-action="handleExport" title="Export (⌘E)">${ICONS.export} Export</button>` : ''}
@@ -122,7 +122,7 @@ function buildCanvasArea(view) {
   if (!view) {
     return `<div id="canvas-area" class="canvas-area-empty">
       <div id="empty-state">
-        ${ICONS.cursor}
+        <img src="/logo.png" class="es-icon" alt="">
         <h2>No run selected</h2>
         <p>Import a trace from LangSmith, LangFuse, W&amp;B Weave or a .agentflow.json file, or explore a ready-made example.</p>
         <div class="es-actions">
