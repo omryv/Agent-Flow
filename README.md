@@ -44,13 +44,13 @@ Import a trace from LangSmith, LangFuse or W&B Weave, inspect every step as a gr
 
 | | |
 |---|---|
-| **Runtime** | 14 classic `<script>` files, 2,398 lines of vanilla JavaScript. No framework, no bundler, no transpiler. |
+| **Runtime** | 14 classic `<script>` files, 2,396 lines of vanilla JavaScript. No framework, no bundler, no transpiler. |
 | **Dependencies** | None at runtime. There is no `package.json` and no build step: `public/` is deployed as-is. |
 | **Data handling** | Traces never leave the browser. The code makes no `fetch`, XHR or WebSocket calls, and state persists only to `localStorage`. |
 | **Inputs** | Native `.agentflow.json`, plus auto-detected LangSmith, LangFuse and W&B Weave exports. |
 | **Counterfactuals** | Authored scenarios (`nodeOverrides`), plus scenarios computed by a built-in Logic Engine (minimum edge cuts, Pareto-ranked). |
 | **Security** | CSP `default-src 'none'`, sha384 SRI on all 15 assets (verified by CI), HSTS preload, COOP/COEP/CORP, entity-escaping on every user string. |
-| **Tests** | 603 Jest tests across 11 suites, run by CI on Node 18, 20 and 22 for every push to `main` and every pull request. |
+| **Tests** | 611 Jest tests across 12 suites, run by CI on Node 18, 20 and 22 for every push to `main` and every pull request. |
 
 ---
 
@@ -172,7 +172,7 @@ flowchart LR
 | `revision.js` | 198 | `reviseToFalsify` / `reviseToSatisfy`, Pareto filtering; registers `window.LogicEngine` |
 | `counterfactual.js` | 280 | Converts traces to facts, caches revisions per topology, ranks per-node suggestions, materializes them; registers `window.AgentFlowCounterfactual` |
 | `render.js` | 497 | Builds the whole UI as one escaped HTML string, then applies positions and colours via CSSOM |
-| `events.js` | 376 | Delegated `data-action` / `data-change` dispatch, import/export, paste, drop, keyboard |
+| `events.js` | 374 | Delegated `data-action` / `data-change` dispatch, import/export, paste, drop, keyboard |
 | `main.js` | 6 | `ErrorBoundary.install()`, `installDelegation()`, `render()` |
 
 ### One state atom, one render path
@@ -200,7 +200,7 @@ sequenceDiagram
 
 - **Normalize on every write.** `_normalizeState` re-validates every run, deep-clones it, and repairs references (`activeRunId`, `selectedNodeId`, `activeCounterfactual`) that no longer resolve. Corrupt `localStorage` falls back to an empty workspace instead of crashing.
 - **Counterfactuals never mutate the base run.** A scenario is stored as overrides and *materialized on read* into a separate view run. The original is always intact for diffing.
-- **Strings in, CSSOM out.** Markup is built from escaped strings. Data-driven geometry (`left`, `top`, `opacity`, canvas size, role colours) is applied afterwards through `element.style` from `data-*` attributes, so the CSP needs no `'unsafe-inline'` for layout.
+- **Strings in, CSSOM out.** Markup is built from escaped strings. Data-driven geometry (`left`, `top`, `opacity`, canvas size, role colours) is applied afterwards through `element.style` from `data-*` attributes. No markup carries an inline `style` attribute, so the CSP needs no `'unsafe-inline'`.
 - **One dispatch table.** Elements declare intent with `data-action` / `data-change`, and a delegated listener routes it through a single `ACTIONS` map. Nothing is re-wired per render.
 - **Fail visibly, keep data.** `render` and every action run inside `ErrorBoundary`, which replaces the UI with an error panel offering **Reload** or **Reset & reload** (the latter clears stored state).
 
@@ -397,7 +397,7 @@ Every push to `main` and every pull request runs [CI](.github/workflows/ci.yml) 
 | Job | What it proves |
 |---|---|
 | **SRI hashes** | Every script and stylesheet in `public/index.html` has a `sha384` integrity attribute that matches the file byte for byte ([`.github/scripts/verify-sri.js`](.github/scripts/verify-sri.js)). A stale or missing hash fails the build. |
-| **Tests (Node 18 / 20 / 22)** | All 603 tests pass on each Node version. |
+| **Tests (Node 18 / 20 / 22)** | All 611 tests pass on each Node version. |
 
 The workflow is locked down the same way as the site:
 
@@ -418,6 +418,7 @@ npx --yes jest@30.5.2 --config '{}'
 | `adapters.test.js` | 103 | Format detection, all three importers, ID/time/role/status helpers |
 | `counterfactual.test.js` | 75 | `traceToFacts`, per-node suggestions, materialization, the topology cache |
 | `data-validation.test.js` | 52 | Every schema rule, including dangling edges |
+| `events.test.js` | 8 | Delegated clicks and changes dispatch exactly once; toggles (node selection, counterfactual cards) driven by simulated clicks |
 | `explain.test.js` | 48 | Explanation text: sections, collateral listing, truncation |
 | `facts.test.js` | 44 | `Fact` / `Query` parsing and fact-set operations |
 | `graph.test.js` | 39 | Adjacency, reachability, paths, closure, on-path edges |
@@ -426,11 +427,13 @@ npx --yes jest@30.5.2 --config '{}'
 | `state.test.js` | 50 | Normalization, persistence, views, materialization, cloning |
 | `utils.test.js` | 40 | Escaping, clamping, `SafeStore` limits |
 | `workflows.test.js` | 70 | End-to-end flows through state: import, switch, search, tabs, scenarios, reload |
-| **Total** | **603** | |
+| **Total** | **611** | |
 
 **Harness.** There is no jsdom. `tests/helpers/loadContext.js` concatenates the 11 non-DOM source files and runs them in a Node `vm` sandbox with mocked `localStorage`, `document` and `window`, exactly as the browser would load them. `tests/helpers/engine.js` does the same for the four Logic Engine files alone.
 
-**Not covered.** `render.js`, `events.js` and `main.js` (the DOM layer) are excluded from the sandbox. The workflow tests drive `setState`, not real clicks.
+**Event delegation.** `events.test.js` loads `events.js` into the same sandbox with stub event targets, and replays each click the way a browser bubbles it (through `#app`, then `document`).
+
+**Not covered.** `render.js` and `main.js` are excluded from the sandbox, so the generated markup itself is not unit-tested.
 
 ---
 
@@ -461,7 +464,7 @@ Agent-Flow/
 │   ├── js/                     # 14 modules (see Architecture)
 │   └── favicon.svg · favicon-32.png · apple-touch-icon.png
 ├── examples/                   # native, LangSmith, LangFuse and Weave sample traces
-├── tests/                      # 11 Jest suites + vm sandbox helpers
+├── tests/                      # 12 Jest suites + vm sandbox helpers
 ├── docs/                       # screenshots and historical release reports
 ├── vercel.json                 # headers, caching, output directory
 ├── CHANGELOG.md · SECURITY.md · LICENSE
@@ -472,14 +475,12 @@ Agent-Flow/
 
 ## Known issues and limitations
 
-Verified against commit `427e19c`.
+Verified in Chromium with the production headers.
 
 **Issues**
 
 | Issue | Effect | Workaround |
 |---|---|---|
-| Clicks are dispatched twice: `installDelegation()` listens on both `#app` and `document` | Toggle actions cancel themselves. Clicking a node doesn't open it in the detail panel, and clicking a counterfactual card doesn't activate it. **Compute counterfactuals** runs twice, so the second run shows an "already adopted" alert. | Use <kbd>←</kbd>/<kbd>→</kbd> to select nodes and the **Scenario** dropdown to activate counterfactuals |
-| Inline `style="…"` attributes in the import dialog and error panel | Blocked by CSP `style-src 'self'`. Cosmetic, with console errors. | — |
 | `--ff-b` / `--ff-d` / `--ff-m` are used but never defined in `styles.css` | Text renders in the browser's default font | — |
 | Paste import has no size check | The 2 MB cap applies only to the file dialog and drag and drop | — |
 | `Permissions-Policy` lists `bluetooth` | Chromium logs "Unrecognized feature" (warning only) | — |
@@ -489,7 +490,7 @@ Verified against commit `427e19c`.
 - Computed counterfactuals are **structural**. Nothing is re-executed, and the counterfactual final answer is a placeholder.
 - The engine search is exhaustive over cuts of at most 2 edges. On tree-shaped traces where the root fans out to three or more branches, it finds **no** scenarios (the bundled Weave example is one). Its cost also grows quickly with trace size (see [Performance](#performance)).
 - State is per browser (`localStorage`, 4 MB). There is no sync and no backend.
-- CI covers the logic layer and the SRI hashes. The DOM layer has no automated tests (see [Testing](#testing)).
+- CI covers the logic layer, event delegation and the SRI hashes. The rendered markup has no automated tests (see [Testing](#testing)).
 
 ---
 

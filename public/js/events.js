@@ -39,13 +39,13 @@ function handleExport() {
 function openImportDialog() {
   showModal(`
     <h2>${ICONS.import} Import Run</h2>
-    <p style="font-size:12px;color:var(--text-2);margin-bottom:12px;">
+    <p class="import-hint">
       Accepts <strong>.agentflow.json</strong> or raw trace exports from
       <strong>LangSmith</strong>, <strong>LangFuse</strong>, or <strong>W&amp;B Weave</strong>.
       Max 2&nbsp;MB.
     </p>
     <input type="file" id="import-file" accept="application/json,.json" data-role="import-file"/>
-    <div id="import-format-badge" style="font-size:11px;color:var(--accent-2);margin-top:8px;min-height:16px;"></div>
+    <div id="import-format-badge"></div>
     <div id="import-error" class="error-msg"></div>
     <div class="modal-actions">
       <button class="btn" data-action="closeModal">Cancel</button>
@@ -252,12 +252,10 @@ function _onKey(e) {
   }
 }
 
+// Listeners live on document only: it receives events from #app and from the
+// import dialog (appended to body). Also listening on #app dispatched every
+// in-app action twice, so toggles such as selectNode cancelled themselves.
 function installDelegation() {
-  const app = document.getElementById('app');
-  if (app) {
-    app.addEventListener('click', _delegatedClick);
-    app.addEventListener('change', _delegatedChange);
-  }
   document.addEventListener('click', _delegatedClick);
   document.addEventListener('change', _delegatedChange);
   document.addEventListener('keydown', _onKey);

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Every click inside the app was dispatched twice, because `installDelegation()` listened on both `#app` and `document`. Toggle actions cancelled themselves: clicking a node did not open it, clicking a counterfactual card did not activate it, and **Compute counterfactuals** ran twice. Delegation now listens on `document` only
+- The import dialog and the error panel no longer use inline `style` attributes, which the production CSP (`style-src 'self'`) blocked; their styles now live in `styles.css`
+
+### Added
+- `tests/events.test.js`: replays clicks and changes the way a browser bubbles them and asserts each action fires exactly once
+
 ### Planned
 - Command palette for advanced navigation
 - Live streaming trace support
