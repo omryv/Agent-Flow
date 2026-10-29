@@ -113,3 +113,5 @@ openssl dgst -sha384 -binary public/js/counterfactual.js | openssl base64 -A
 ## License
 
 Copyright © 2026 Omry Damari - "Visigence Studio"
+
+Licensed under the [Apache License 2.0](LICENSE).

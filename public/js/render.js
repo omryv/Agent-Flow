@@ -1,4 +1,4 @@
-/*! AgentFlow — Copyright (c) 2026 Omry Damari - Visigence. Proprietary. */
+/*! AgentFlow — Copyright (c) 2026 Omry Damari - Visigence. SPDX-License-Identifier: Apache-2.0 */
 'use strict';
 
 const NODE_W = 220;
