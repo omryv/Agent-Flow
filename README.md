@@ -1,12 +1,7 @@
 # Agent-Flow
 
-[![Tests](https://img.shields.io/badge/tests-598_passing-brightgreen)](https://github.com/OmryV/Agent-Flow/actions)
-[![Node.js](https://img.shields.io/badge/Node.js-18%20%7C%2020%20%7C%2022-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![Latest Verified Run](https://img.shields.io/badge/Latest_Run-ace68e9-success)](https://github.com/OmryV/Agent-Flow/commit/ace68e94a21f294d26aff8fc4eb58236a33fb286)
+> **No build step. No dependencies. No CI.** The static files in `public/` are deployed as-is, with every script pinned by an SRI hash.
 
-> **Validated on Node.js 18, 20, and 22**  
-> **GitHub Actions verified on every push and pull request**  
-> **Latest verified run:** [ace68e9](https://github.com/OmryV/Agent-Flow/commit/ace68e94a21f294d26aff8fc4eb58236a33fb286) • [Actions #26160112241](https://github.com/OmryV/Agent-Flow/actions/runs/26160112241)
 AgentFlow is a client-side agent trace visualizer and counterfactual reasoning tool. Import execution traces from LangSmith, LangFuse, or W&B Weave, inspect node-level behavior through a directed graph UI, and explore "what if" scenarios powered by a built-in Logic Engine.
 
 ## Current Architecture
@@ -90,7 +85,21 @@ All user-controlled strings pass through `esc()` (8-char entity encoding) and `e
 
 
 
-598 tests across 11 suites covering data validation, adapters, layout, state management, graph operations, fact parsing, belief revision, explanation generation, and counterfactual integration.
+## Tests
+
+603 tests across 11 suites covering data validation, adapters, layout, state management, graph operations, fact parsing, belief revision, explanation generation, and counterfactual integration.
+
+There is no `package.json` and no CI by design. Run the suite locally on demand:
+
+```bash
+npx --yes jest@30 --config '{}'
+```
+
+After changing any file in `public/js/` or `public/css/`, update its `integrity` hash in `public/index.html`, or the browser will refuse to load it:
+
+```bash
+openssl dgst -sha384 -binary public/js/counterfactual.js | openssl base64 -A
+```
 
 ### Test Infrastructure
 

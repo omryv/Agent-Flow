@@ -373,6 +373,68 @@ describe('computeNodeCounterfactuals()', () => {
     expect(answerCut.summary).toContain('Format Response');
   });
 
+  describe('revision cache', () => {
+    function countSearches() {
+      const LE = ctx.window.LogicEngine;
+      const original = LE.reviseToFalsify;
+      const counter = { calls: 0 };
+      LE.reviseToFalsify = function () {
+        counter.calls++;
+        return original.apply(this, arguments);
+      };
+      return counter;
+    }
+
+    test('runs the revision search once for all nodes of the same run', () => {
+      const counter = countSearches();
+      const run = linearRun();
+      run.nodes.forEach(node => call(run, node.id));
+      // linearRun has a single source, so one search covers the whole run
+      expect(counter.calls).toBe(1);
+    });
+
+    test('reuses the search for a cloned run with the same topology', () => {
+      const counter = countSearches();
+      call(linearRun(), 'n2');
+      call(JSON.parse(JSON.stringify(linearRun())), 'n3');
+      expect(counter.calls).toBe(1);
+    });
+
+    test('recomputes when the edges change', () => {
+      const counter = countSearches();
+      const run = linearRun();
+      call(run, 'n2');
+      const rewired = linearRun();
+      rewired.edges = [{ from: 'n1', to: 'n3' }, { from: 'n3', to: 'n4' }, { from: 'n2', to: 'n4' }];
+      const suggestions = call(rewired, 'n3');
+      expect(counter.calls).toBeGreaterThan(1);
+      suggestions.forEach(s => {
+        s.removedEdges.forEach(e => {
+          expect(e.from === 'n2' && e.to === 'n3').toBe(false);
+        });
+      });
+    });
+
+    test('summaries use current node names even when the topology is cached', () => {
+      call(linearRun(), 'n4');
+      const renamed = linearRun();
+      renamed.nodes[3].name = 'Renamed Output';
+      const suggestions = call(renamed, 'n4');
+      expect(suggestions.some(s => s.summary.includes('Renamed Output'))).toBe(true);
+      suggestions.forEach(s => expect(s.summary).not.toContain('Format Response'));
+    });
+
+    test('mutating a returned suggestion does not affect later calls', () => {
+      const run = linearRun();
+      const first = call(run, 'n4');
+      first[0].affectedNodeIds.push('tampered');
+      first[0].removedEdges[0].from = 'tampered';
+      const second = call(run, 'n4');
+      expect(second[0].affectedNodeIds).not.toContain('tampered');
+      expect(second[0].removedEdges[0].from).not.toBe('tampered');
+    });
+  });
+
   test('single node run: the only node is reported as affected', () => {
     const suggestions = call(singleNodeRun(), 'only');
     expect(suggestions.length).toBeGreaterThan(0);
